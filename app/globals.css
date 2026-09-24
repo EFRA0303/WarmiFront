@@ -1,26 +1,192 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+  --background: #f5faf9;
+  --surface: #ffffff;
+  --surface-soft: #eef8f6;
+  --surface-muted: #e4f2ef;
+  --foreground: #132825;
+  --muted: #60736f;
+  --subtle: #8da09c;
+  --border: #d7e7e3;
+  --primary: #0d9488;
+  --primary-strong: #08776f;
+  --primary-soft: #ccfbf1;
+  --primary-contrast: #ffffff;
+  --danger: #dc5a68;
+  --danger-soft: #fff0f2;
+  --shadow: 0 28px 70px rgba(19, 64, 59, 0.13);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #071513;
+  --surface: #0d211e;
+  --surface-soft: #102a26;
+  --surface-muted: #153832;
+  --foreground: #eaf7f4;
+  --muted: #9bb7b1;
+  --subtle: #78938d;
+  --border: #23433e;
+  --primary: #2dd4bf;
+  --primary-strong: #5eead4;
+  --primary-soft: #123f38;
+  --primary-contrast: #052c28;
+  --danger: #fb7185;
+  --danger-soft: #3d1920;
+  --shadow: 0 28px 70px rgba(0, 0, 0, 0.34);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  background: var(--background);
 }
 
 body {
+  min-height: 100vh;
+  margin: 0;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Segoe UI Variable", "Segoe UI", Arial, Helvetica, sans-serif;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: var(--primary-soft);
+  color: var(--foreground);
+}
+
+:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--primary) 35%, transparent);
+  outline-offset: 2px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 13px;
+  width: fit-content;
+}
+
+.brand__mark {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border-radius: 15px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  box-shadow: 0 10px 28px rgba(3, 57, 52, 0.15);
+}
+
+.brand__mark svg {
+  width: 34px;
+  height: 34px;
+  fill: currentColor;
+}
+
+.brand__leaf {
+  fill: var(--surface);
+  opacity: 0.93;
+}
+
+.brand__spark {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 2.8;
+}
+
+.brand__copy {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand__copy strong {
+  font-size: 1.45rem;
+  font-weight: 760;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+}
+
+.brand__copy small {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.brand--inverse .brand__mark {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(8px);
+}
+
+.brand--inverse .brand__leaf {
+  fill: #0b7169;
+}
+
+.brand--inverse .brand__copy small {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.theme-toggle {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  cursor: pointer;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--surface);
+  color: var(--muted);
+  box-shadow: 0 8px 24px rgba(19, 64, 59, 0.07);
+  transition: border-color 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.theme-toggle:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  transform: translateY(-2px);
+}
+
+.theme-toggle svg {
+  grid-area: 1 / 1;
+  width: 19px;
+  height: 19px;
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.theme-toggle__moon,
+:root[data-theme="dark"] .theme-toggle__sun {
+  opacity: 0;
+  transform: scale(0.65) rotate(-30deg);
+}
+
+:root[data-theme="dark"] .theme-toggle__moon {
+  opacity: 1;
+  transform: scale(1) rotate(0);
 }
