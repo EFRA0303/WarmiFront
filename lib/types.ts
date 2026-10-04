@@ -9,6 +9,7 @@ export type LoginState = {
 export type AuthResponse = {
   access_token: string;
   token_type: "Bearer" | string;
+  expires_in: number;
 };
 
 export type CurrentUser = {
@@ -17,6 +18,7 @@ export type CurrentUser = {
   nombre_usuario: string | null;
   estado: string;
   ultimo_acceso_en: string | null;
+  permisos: string[];
   persona: {
     nombre: string;
     ap_paterno: string;
@@ -27,4 +29,149 @@ export type CurrentUser = {
     nombre: string;
     descripcion: string | null;
   };
+};
+
+export type UserStatus = "ACTIVO" | "BAJA" | "BLOQUEADO";
+export type UserType = "PACIENTE" | "PERSONAL";
+export type GeneralStatus = "ACTIVO" | "BAJA";
+export type Gender = "FEMENINO" | "MASCULINO";
+
+export type PersonSummary = {
+  id_persona: number;
+  nombre: string;
+  ap_paterno: string;
+  ap_materno: string | null;
+  ci: string | null;
+  fecha_nac: string | null;
+  genero: Gender;
+  telefono1: string;
+  telefono2: string | null;
+  direccion: string | null;
+};
+
+export type PatientListItem = {
+  id_paciente: number;
+  id_persona: number;
+  ocupacion: string | null;
+  estado: GeneralStatus;
+  motivo_baja: string | null;
+  created_at: string;
+  updated_at: string;
+  persona: PersonSummary;
+};
+
+export type StaffListItem = {
+  id_personal: number;
+  id_usuario: number;
+  profesion: string;
+  cargo: string;
+  fecha_ingreso: string;
+  estado: GeneralStatus;
+  motivo_baja: string | null;
+  created_at: string;
+  updated_at: string;
+  usuario: {
+    id_usuario: number;
+    correo_acceso: string;
+    nombre_usuario: string | null;
+    persona: PersonSummary;
+    rol: {
+      id_rol: number;
+      nombre: string;
+      descripcion: string | null;
+      estado: GeneralStatus;
+    };
+  };
+};
+
+export type RoleListItem = {
+  id_rol: number;
+  nombre: string;
+  descripcion: string | null;
+  estado: GeneralStatus;
+};
+
+export type PermissionListItem = {
+  id_permiso: number;
+  permiso: string;
+  descripcion: string | null;
+  estado: GeneralStatus;
+};
+
+export type RolePermissionAssignment = {
+  id_rol: number;
+  id_permiso: number;
+  permiso: PermissionListItem;
+};
+
+export type UserPermissionAssignment = {
+  id_usuario: number;
+  id_permiso: number;
+  permitido: boolean;
+  permiso: PermissionListItem;
+};
+
+export type RoleWithPermissions = RoleListItem & {
+  permissionIds: number[];
+};
+
+export type UserPermissionContext = {
+  permissions: PermissionListItem[];
+  rolePermissionIds: number[];
+  exceptions: UserPermissionAssignment[];
+};
+
+export type RegistrationState = {
+  resultId?: string;
+  outcome?: "success" | "error";
+  title?: string;
+  message?: string;
+  fieldErrors?: Record<string, string>;
+};
+
+export type UserListItem = {
+  id_usuario: number;
+  id_persona: number;
+  id_rol: number;
+  correo_acceso: string;
+  nombre_usuario: string | null;
+  estado: UserStatus;
+  intentos_fallidos: number;
+  bloqueado_hasta: string | null;
+  ultimo_acceso_en: string | null;
+  ultima_actividad_en: string | null;
+  en_linea: boolean;
+  created_at: string;
+  created_by: number | null;
+  updated_at: string;
+  updated_by: number | null;
+  persona: {
+    id_persona: number;
+    nombre: string;
+    ap_paterno: string;
+    ap_materno: string | null;
+    ci: string | null;
+    telefono1: string;
+  };
+  rol: {
+    id_rol: number;
+    nombre: string;
+    descripcion: string | null;
+    estado: string;
+  };
+  creador: {
+    id_usuario: number;
+    persona: {
+      nombre: string;
+      ap_paterno: string;
+      ap_materno: string | null;
+    };
+  } | null;
+};
+
+export type PaginatedResponse<T> = {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
 };

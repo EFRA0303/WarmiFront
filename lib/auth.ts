@@ -1,6 +1,7 @@
 import "server-only";
 
 import { cookies } from "next/headers";
+import { cache } from "react";
 import { backendUrl } from "@/lib/backend";
 import type { CurrentUser } from "@/lib/types";
 
@@ -11,13 +12,17 @@ export async function getSessionToken() {
   return (await cookies()).get(SESSION_COOKIE)?.value;
 }
 
-export async function createSession(token: string) {
+export async function createSession(token: string, expiresIn = SESSION_MAX_AGE) {
+  const maxAge =
+    Number.isInteger(expiresIn) && expiresIn >= 60
+      ? expiresIn
+      : SESSION_MAX_AGE;
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    maxAge: SESSION_MAX_AGE,
+    maxAge,
     path: "/",
     priority: "high",
   });
@@ -27,7 +32,7 @@ export async function deleteSession() {
   (await cookies()).delete(SESSION_COOKIE);
 }
 
-export async function getCurrentUser(): Promise<CurrentUser | null> {
+export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   const token = await getSessionToken();
   if (!token) return null;
 
@@ -42,4 +47,4 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   } catch {
     return null;
   }
-}
+});

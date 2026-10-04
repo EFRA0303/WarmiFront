@@ -525,6 +525,7 @@
     bottom: 21px;
     left: 22px;
   }
+
 }
 
 @media (max-width: 380px) {
@@ -544,6 +545,7 @@
   .login-card {
     margin-top: 56px;
   }
+
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -556,3 +558,22 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Textos de contenido mas legibles sin modificar los titulos del acceso. */
+.hero-eyebrow,
+.welcome-pill,
+.hero-footer,
+.field-label-row span,
+.field-error,
+.login-security p,
+.login-help { font-size: 0.78rem; }
+
+.hero-highlight strong,
+.field-group label,
+.form-alert p { font-size: 0.84rem; }
+
+.hero-highlight small,
+.login-security > span { font-size: 0.72rem; }
+
+.field-control input,
+.submit-button { font-size: 0.92rem; }

@@ -7,7 +7,7 @@ import {
   EyeIcon,
   EyeOffIcon,
   LockIcon,
-  MailIcon,
+  UserSettingsIcon,
 } from "@/components/icons";
 import type { LoginState } from "@/lib/types";
 
@@ -23,18 +23,17 @@ export function LoginForm() {
   return (
     <form className="login-form" action={formAction} noValidate>
       <div className="field-group">
-        <label htmlFor="correo_acceso">Correo electrónico</label>
+        <label htmlFor="correo_acceso">Correo o nombre de usuario</label>
         <div
           className={`field-control ${state.fieldErrors?.correo_acceso ? "field-control--error" : ""}`}
         >
-          <MailIcon className="field-control__icon" />
+          <UserSettingsIcon className="field-control__icon" />
           <input
             id="correo_acceso"
             name="correo_acceso"
-            type="email"
-            inputMode="email"
+            type="text"
             autoComplete="username"
-            placeholder="tu@correo.com"
+            placeholder="tu@correo.com o tu usuario"
             aria-describedby={
               state.fieldErrors?.correo_acceso ? "correo-error" : undefined
             }
