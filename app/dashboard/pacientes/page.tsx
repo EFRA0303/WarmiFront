@@ -9,6 +9,8 @@ import { getPatients } from "@/lib/people";
 import type { GeneralStatus, PatientListItem } from "@/lib/types";
 import { PatientRegistrationDialog } from "@/components/registration-dialogs";
 import { PatientEditDialog } from "@/components/people-edit-dialogs";
+import { GeneralStatusControl } from "@/components/general-status-control";
+import { changePatientStatus } from "./actions";
 import "../people.css";
 
 export const metadata: Metadata = { title: "Pacientes" };
@@ -56,6 +58,8 @@ export default async function PatientsPage({ searchParams }: PageProps) {
     currentUser?.permisos.includes("personas.actualizar") &&
     currentUser.permisos.includes("pacientes.actualizar"),
   );
+  const canChangeStatus = Boolean(currentUser?.permisos.includes("pacientes.actualizar"));
+  const canChangeUserStatus = Boolean(currentUser?.permisos.includes("usuarios.actualizar"));
 
   if (!result.ok) return <DirectoryError title="pacientes" message={result.message} forbidden={result.status === 403} />;
 
@@ -100,7 +104,7 @@ export default async function PatientsPage({ searchParams }: PageProps) {
                     <td><span className="directory-main-value">{patient.persona.ci || "Sin registrar"}</span></td>
                     <td><div className="directory-stacked"><strong className="patient-whatsapp-phone"><FaWhatsapp aria-hidden="true" />{patient.persona.telefono1}</strong><small>{patient.persona.telefono2 || "Sin teléfono alternativo"}</small></div></td>
                     <td><span className="directory-main-value">{patient.ocupacion || "Sin registrar"}</span></td>
-                    <td><StatusBadge status={patient.estado} /></td>
+                    <td>{canChangeStatus ? <GeneralStatusControl id={patient.id_paciente} name={fullName(patient)} status={patient.estado} reason={patient.motivo_baja} accessPolicy={patient.persona.usuario && canChangeUserStatus ? "optional" : "none"} action={changePatientStatus} /> : <StatusBadge status={patient.estado} />}</td>
                     {canEdit && <td><PatientEditDialog patient={patient} /></td>}
                   </tr>
                 ))}</tbody>
@@ -109,7 +113,7 @@ export default async function PatientsPage({ searchParams }: PageProps) {
           </div>
           <div className="directory-mobile-list">{data.map((patient) => (
             <article className="directory-mobile-card" key={patient.id_paciente}>
-              <div className="directory-card-head"><div className="directory-person"><span>{initials(patient) || "WP"}</span><div><strong>{fullName(patient)}</strong><small>{patient.persona.ci || `Paciente #${patient.id_paciente}`}</small></div></div><StatusBadge status={patient.estado} /></div>
+              <div className="directory-card-head"><div className="directory-person"><span>{initials(patient) || "WP"}</span><div><strong>{fullName(patient)}</strong><small>{patient.persona.ci || `Paciente #${patient.id_paciente}`}</small></div></div>{canChangeStatus ? <GeneralStatusControl id={patient.id_paciente} name={fullName(patient)} status={patient.estado} reason={patient.motivo_baja} accessPolicy={patient.persona.usuario && canChangeUserStatus ? "optional" : "none"} action={changePatientStatus} /> : <StatusBadge status={patient.estado} />}</div>
               <dl><div><dt>Teléfono</dt><dd className="patient-whatsapp-phone"><FaWhatsapp aria-hidden="true" />{patient.persona.telefono1}</dd></div><div><dt>Ocupación</dt><dd>{patient.ocupacion || "Sin registrar"}</dd></div></dl>
               {canEdit && <div className="directory-card-actions"><PatientEditDialog patient={patient} /></div>}
             </article>

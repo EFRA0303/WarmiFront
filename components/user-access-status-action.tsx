@@ -72,6 +72,7 @@ export function UserAccessStatusAction({
   userId,
   userName,
   currentStatus,
+  currentReason,
   blockedUntil,
   temporarilyBlocked,
   canEdit,
@@ -79,6 +80,7 @@ export function UserAccessStatusAction({
   userId: number;
   userName: string;
   currentStatus: UserStatus;
+  currentReason: string | null;
   blockedUntil: string | null;
   temporarilyBlocked: boolean;
   canEdit: boolean;
@@ -87,14 +89,15 @@ export function UserAccessStatusAction({
   const initialStatus = effectiveStatus(currentStatus, temporarilyBlocked);
   const [selectedStatus, setSelectedStatus] = useState<UserStatus>(initialStatus);
   const [blockedUntilValue, setBlockedUntilValue] = useState(localDateTimeValue(blockedUntil));
-  const [reason, setReason] = useState("");
+  const [reason, setReason] = useState(initialStatus === "ACTIVO" ? "" : currentReason || "");
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
 
   function openDialog() {
     setSelectedStatus(effectiveStatus(currentStatus, temporarilyBlocked));
     setBlockedUntilValue(localDateTimeValue(blockedUntil));
-    setReason("");
+    const status = effectiveStatus(currentStatus, temporarilyBlocked);
+    setReason(status === "ACTIVO" ? "" : currentReason || "");
     setError("");
     dialogRef.current?.showModal();
   }

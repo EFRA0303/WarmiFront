@@ -257,6 +257,20 @@
   font-size: 0.72rem;
 }
 
+.forgot-password-link {
+  cursor: pointer;
+  border: 0;
+  background: transparent;
+  color: var(--primary-strong);
+  font-size: 0.78rem;
+  font-weight: 720;
+}
+
+.forgot-password-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .field-control {
   display: flex;
   height: 55px;
@@ -461,6 +475,29 @@
   font-weight: 700;
 }
 
+.recovery-dialog { position: fixed; inset: 0; width: min(520px, calc(100% - 30px)); max-width: none; margin: auto; padding: 0; border: 1px solid var(--border); border-radius: 24px; background: var(--surface); color: var(--foreground); box-shadow: 0 34px 100px rgba(3, 24, 22, 0.4); }
+.recovery-dialog::backdrop { background: rgba(3, 24, 22, 0.68); backdrop-filter: blur(7px); }
+.recovery-dialog__content { display: grid; gap: 24px; padding: 26px; }
+.recovery-dialog__content > header { display: grid; grid-template-columns: auto 1fr auto; align-items: start; gap: 15px; }
+.recovery-dialog__icon { display: grid; width: 46px; height: 46px; place-items: center; border-radius: 15px; background: var(--primary-soft); color: var(--primary-strong); }
+.recovery-dialog__icon svg,
+.recovery-dialog__close svg { width: 20px; height: 20px; }
+.recovery-dialog__content h2 { margin: 7px 0 6px; font-size: 1.3rem; letter-spacing: -0.035em; }
+.recovery-dialog__content header p { margin: 0; color: var(--muted); font-size: 0.84rem; line-height: 1.6; }
+.recovery-dialog__close { display: grid; width: 38px; height: 38px; cursor: pointer; place-items: center; border: 1px solid var(--border); border-radius: 12px; background: var(--background); color: var(--muted); }
+.recovery-dialog__field { display: grid; gap: 8px; font-size: 0.84rem; font-weight: 700; }
+.recovery-result { display: flex; align-items: flex-start; gap: 11px; padding: 13px 15px; border: 1px solid; border-radius: 14px; }
+.recovery-result > span { display: grid; width: 21px; height: 21px; flex: 0 0 auto; place-items: center; border: 1px solid currentColor; border-radius: 50%; font-size: 0.72rem; font-weight: 850; }
+.recovery-result p { margin: 0; font-size: 0.8rem; line-height: 1.55; }
+.recovery-result--success { border-color: color-mix(in srgb, var(--primary) 30%, var(--border)); background: var(--primary-soft); color: var(--primary-strong); }
+.recovery-result--error { border-color: color-mix(in srgb, var(--danger) 30%, var(--border)); background: var(--danger-soft); color: var(--danger); }
+.recovery-dialog__content footer { display: flex; justify-content: flex-end; gap: 10px; }
+.recovery-dialog__cancel,
+.recovery-dialog__submit { min-height: 45px; cursor: pointer; padding: 0 17px; border-radius: 13px; font-size: 0.82rem; font-weight: 750; }
+.recovery-dialog__cancel { border: 1px solid var(--border); background: var(--surface); color: var(--muted); }
+.recovery-dialog__submit { border: 0; background: var(--primary); color: var(--primary-contrast); }
+.recovery-dialog button:disabled { cursor: wait; opacity: 0.65; }
+
 @media (max-width: 1050px) {
   .login-shell {
     grid-template-columns: minmax(340px, 0.82fr) minmax(450px, 1.18fr);
@@ -577,3 +614,11 @@
 
 .field-control input,
 .submit-button { font-size: 0.92rem; }
+
+@media (max-width: 380px) {
+  .field-label-row { align-items: flex-start; flex-direction: column; gap: 7px; }
+  .recovery-dialog__content { padding: 21px; }
+  .recovery-dialog__content footer { flex-direction: column-reverse; }
+  .recovery-dialog__cancel,
+  .recovery-dialog__submit { width: 100%; }
+}

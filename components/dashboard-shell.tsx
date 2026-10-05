@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logoutAction } from "@/app/actions/auth";
 import { Brand } from "@/components/brand";
+import { AccountMenu } from "@/components/account-menu";
 import {
   BoxIcon,
   BriefcaseIcon,
@@ -201,13 +202,7 @@ export function DashboardShell({
 
           <div className="topbar-actions">
             <ThemeToggle />
-            <div className="topbar-user">
-              <span className="topbar-avatar">{initials || "WU"}</span>
-              <span>
-                <strong>{displayName}</strong>
-                <small>{user.rol?.nombre || "Sin rol"}</small>
-              </span>
-            </div>
+            <AccountMenu user={user} displayName={displayName} initials={initials} />
             <form action={logoutAction}>
               <button className="topbar-logout" type="submit" title="Cerrar sesión">
                 <LogoutIcon />

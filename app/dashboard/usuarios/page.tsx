@@ -350,6 +350,7 @@ export default async function UsersPage({ searchParams }: PageProps) {
                           userId={user.id_usuario}
                           userName={userName(user) || user.correo_acceso}
                           currentStatus={user.estado}
+                          currentReason={user.motivo_estado}
                           blockedUntil={user.bloqueado_hasta}
                           temporarilyBlocked={hasTemporaryLock(user)}
                           canEdit={canUpdateUsers}
@@ -394,6 +395,7 @@ export default async function UsersPage({ searchParams }: PageProps) {
                       userId={user.id_usuario}
                       userName={userName(user) || user.correo_acceso}
                       currentStatus={user.estado}
+                      currentReason={user.motivo_estado}
                       blockedUntil={user.bloqueado_hasta}
                       temporarilyBlocked={hasTemporaryLock(user)}
                       canEdit={canUpdateUsers}

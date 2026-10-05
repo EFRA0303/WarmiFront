@@ -375,7 +375,7 @@ a.nav-item:hover {
   }
 
   .topbar-title > div,
-  .topbar-user,
+  .topbar-user > span:nth-child(2),
   .topbar-logout span {
     display: none;
   }

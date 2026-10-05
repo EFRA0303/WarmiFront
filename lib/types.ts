@@ -6,6 +6,19 @@ export type LoginState = {
   };
 };
 
+export type PasswordResetState = {
+  success?: boolean;
+  message?: string;
+  fieldErrors?: Record<string, string>;
+};
+
+export type AccountActionState = {
+  resultId?: string;
+  success?: boolean;
+  message?: string;
+  fieldErrors?: Record<string, string>;
+};
+
 export type AuthResponse = {
   access_token: string;
   token_type: "Bearer" | string;
@@ -20,9 +33,16 @@ export type CurrentUser = {
   ultimo_acceso_en: string | null;
   permisos: string[];
   persona: {
+    id_persona: number;
     nombre: string;
     ap_paterno: string;
     ap_materno: string | null;
+    ci: string | null;
+    fecha_nac: string | null;
+    genero: Gender;
+    telefono1: string;
+    telefono2: string | null;
+    direccion: string | null;
   };
   rol: {
     id_rol: number;
@@ -47,6 +67,10 @@ export type PersonSummary = {
   telefono1: string;
   telefono2: string | null;
   direccion: string | null;
+  usuario?: {
+    id_usuario: number;
+    estado: UserStatus;
+  } | null;
 };
 
 export type PatientListItem = {
@@ -136,6 +160,7 @@ export type UserListItem = {
   correo_acceso: string;
   nombre_usuario: string | null;
   estado: UserStatus;
+  motivo_estado: string | null;
   intentos_fallidos: number;
   bloqueado_hasta: string | null;
   ultimo_acceso_en: string | null;

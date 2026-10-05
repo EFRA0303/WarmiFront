@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { randomUUID } from "node:crypto";
 import { getSessionToken } from "@/lib/auth";
 import { backendUrl, readApiMessage } from "@/lib/backend";
-import type { Gender, RegistrationState } from "@/lib/types";
+import type { Gender, GeneralStatus, RegistrationState } from "@/lib/types";
 
 function text(formData: FormData, name: string) {
   const value = formData.get(name);
@@ -139,4 +139,40 @@ export async function updatePatient(
 
   revalidatePath("/dashboard/pacientes");
   return { resultId: randomUUID(), outcome: "success", title: "Paciente actualizado", message: `Los datos de ${[nombre, apPaterno, text(formData, "ap_materno")].filter(Boolean).join(" ")} se actualizaron correctamente.` };
+}
+
+export async function changePatientStatus(
+  patientId: number,
+  status: GeneralStatus,
+  reason: string,
+  updateAccess: boolean,
+): Promise<RegistrationState> {
+  if (!Number.isInteger(patientId) || patientId < 1 || !new Set<GeneralStatus>(["ACTIVO", "BAJA"]).has(status)) {
+    return { resultId: randomUUID(), outcome: "error", title: "Solicitud inválida", message: "No se pudo identificar el paciente o el estado solicitado." };
+  }
+  const normalizedReason = reason.trim();
+  if (status === "BAJA" && !normalizedReason) {
+    return { resultId: randomUUID(), outcome: "error", title: "Motivo requerido", message: "Indica el motivo antes de dar de baja al paciente." };
+  }
+
+  const token = await getSessionToken();
+  if (!token) return { resultId: randomUUID(), outcome: "error", title: "La sesión venció", message: "Vuelve a iniciar sesión para cambiar el estado." };
+
+  try {
+    const response = await fetch(backendUrl(`/pacientes/${patientId}/${updateAccess ? "estado-acceso" : "estado"}`), {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        estado: status,
+        motivo_baja: status === "BAJA" ? normalizedReason : undefined,
+      }),
+      cache: "no-store",
+    });
+    if (!response.ok) return { resultId: randomUUID(), outcome: "error", title: "Estado no actualizado", message: (await readApiMessage(response)) || "No fue posible cambiar el estado del paciente." };
+  } catch {
+    return { resultId: randomUUID(), outcome: "error", title: "Servidor no disponible", message: "No pudimos conectar con el servidor. Inténtalo nuevamente." };
+  }
+
+  revalidatePath("/dashboard/pacientes");
+  return { resultId: randomUUID(), outcome: "success", title: "Estado actualizado", message: updateAccess ? "El paciente y su cuenta se actualizaron correctamente." : status === "ACTIVO" ? "El paciente fue reactivado correctamente." : "El paciente fue dado de baja correctamente." };
 }

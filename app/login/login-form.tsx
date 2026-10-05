@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 import { loginAction } from "@/app/actions/auth";
 import {
   ArrowIcon,
@@ -10,6 +10,7 @@ import {
   UserSettingsIcon,
 } from "@/components/icons";
 import type { LoginState } from "@/lib/types";
+import { ForgotPasswordDialog, type ForgotPasswordDialogHandle } from "./forgot-password-dialog";
 
 const initialState: LoginState = {};
 
@@ -19,8 +20,10 @@ export function LoginForm() {
     initialState,
   );
   const [showPassword, setShowPassword] = useState(false);
+  const recoveryDialogRef = useRef<ForgotPasswordDialogHandle>(null);
 
   return (
+    <>
     <form className="login-form" action={formAction} noValidate>
       <div className="field-group">
         <label htmlFor="correo_acceso">Correo o nombre de usuario</label>
@@ -51,7 +54,9 @@ export function LoginForm() {
       <div className="field-group">
         <div className="field-label-row">
           <label htmlFor="contrasena">Contraseña</label>
-          <span>Acceso seguro</span>
+          <button type="button" className="forgot-password-link" onClick={() => recoveryDialogRef.current?.open()}>
+            ¿Olvidaste tu contraseña?
+          </button>
         </div>
         <div
           className={`field-control ${state.fieldErrors?.contrasena ? "field-control--error" : ""}`}
@@ -108,5 +113,7 @@ export function LoginForm() {
         )}
       </button>
     </form>
+    <ForgotPasswordDialog ref={recoveryDialogRef} />
+    </>
   );
 }

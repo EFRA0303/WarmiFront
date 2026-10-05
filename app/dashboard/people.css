@@ -187,6 +187,69 @@
 .directory-status--activo { background: var(--primary-soft); color: var(--primary-strong); }
 .directory-status--baja { background: var(--danger-soft); color: var(--danger); }
 
+.status-badge { display: inline-flex; align-items: center; gap: 7px; padding: 6px 9px; border-radius: 999px; font-size: 0.8rem; font-weight: 750; white-space: nowrap; }
+.status-badge > svg { width: 13px; height: 13px; flex: 0 0 auto; stroke-width: 2.2; }
+.status-badge--activo { background: var(--primary-soft); color: var(--primary-strong); }
+.status-badge--baja { background: var(--danger-soft); color: var(--danger); }
+.user-status-cell { display: inline-flex; align-items: flex-start; flex-direction: column; gap: 5px; }
+.user-status-cell > small { padding-left: 4px; color: var(--muted); font-size: 0.72rem; font-weight: 650; white-space: nowrap; }
+.user-status-trigger { cursor: pointer; padding: 0; border: 0; outline: 0; background: transparent; color: inherit; font: inherit; text-align: left; }
+.user-status-trigger .status-badge { transition: box-shadow 150ms ease, transform 150ms ease; }
+.user-status-trigger:hover .status-badge,
+.user-status-trigger:focus-visible .status-badge { box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 13%, transparent); transform: translateY(-1px); }
+
+.status-dialog { position: fixed; inset: 0; width: min(620px, calc(100% - 30px)); max-width: none; max-height: calc(100dvh - 30px); margin: auto; padding: 0; border: 1px solid var(--border); border-radius: 23px; background: var(--surface); color: var(--foreground); box-shadow: 0 30px 90px rgba(3, 24, 22, 0.3); }
+.status-dialog::backdrop { background: rgba(3, 24, 22, 0.62); backdrop-filter: blur(5px); }
+.status-dialog__content { max-height: calc(100dvh - 32px); overflow-y: auto; padding: 24px; }
+.status-dialog__header { position: relative; display: grid; grid-template-columns: auto 1fr auto; align-items: start; gap: 14px; }
+.status-dialog__icon { display: grid; width: 44px; height: 44px; place-items: center; border-radius: 14px; background: var(--primary-soft); color: var(--primary-strong); }
+.status-dialog__icon svg { width: 20px; }
+.status-dialog__header h2 { margin: 5px 0; font-size: 1.2rem; letter-spacing: -0.025em; }
+.status-dialog__header p { margin: 0; color: var(--muted); font-size: 0.82rem; line-height: 1.5; }
+.status-dialog__header p strong { color: var(--foreground); }
+.status-dialog__close { display: grid; width: 34px; height: 34px; cursor: pointer; place-items: center; border: 1px solid var(--border); border-radius: 10px; background: var(--background); color: var(--muted); }
+.status-dialog__close svg { width: 16px; }
+.status-dialog__section { margin-top: 22px; }
+.status-dialog__section-title { display: flex; flex-direction: column; gap: 3px; margin-bottom: 10px; }
+.status-dialog__section-title strong { font-size: 0.8rem; }
+.status-dialog__section-title small { color: var(--muted); font-size: 0.72rem; }
+.status-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+.status-options--general { grid-template-columns: repeat(2, 1fr); }
+.status-option { position: relative; display: flex; min-height: 112px; cursor: pointer; align-items: flex-start; flex-direction: column; gap: 12px; padding: 10px 13px; border: 1px solid var(--border); border-radius: 14px; background: var(--background); color: var(--foreground); text-align: left; transition: border-color 140ms ease, background 140ms ease; }
+.status-option:hover { border-color: color-mix(in srgb, currentColor 45%, var(--border)); }
+.status-option--selected { border-color: currentColor; background: color-mix(in srgb, currentColor 8%, var(--surface)); }
+.status-option--activo { color: var(--primary-strong); }
+.status-option--baja { color: var(--danger); }
+.status-option__dot { width: 9px; height: 9px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 5px color-mix(in srgb, currentColor 12%, transparent); }
+.status-option > span:nth-child(2) { display: flex; flex-direction: column; gap: 4px; }
+.status-option strong { color: var(--foreground); font-size: 0.8rem; }
+.status-option small { color: var(--muted); font-size: 0.72rem; line-height: 1.4; }
+.status-option__check { position: absolute; top: 11px; right: 11px; display: grid; width: 22px; height: 22px; place-items: center; border: 1px solid color-mix(in srgb, currentColor 42%, var(--border)); border-radius: 50%; }
+.status-option__check svg { width: 13px; }
+.access-state-fields { display: grid; gap: 13px; padding: 15px; border: 1px solid var(--border); border-radius: 15px; background: var(--surface-soft); }
+.access-state-fields label { display: flex; flex-direction: column; gap: 7px; }
+.access-state-fields label > span { color: var(--muted); font-size: 0.76rem; font-weight: 700; }
+.access-state-fields textarea { width: 100%; min-height: 92px; padding: 11px 12px; resize: vertical; border: 1px solid var(--border); border-radius: 11px; outline: 0; background: var(--background); color: var(--foreground); font: inherit; font-size: 0.82rem; transition: border-color 140ms ease, box-shadow 140ms ease; }
+.access-state-fields textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 11%, transparent); }
+.current-status-reason { color: var(--muted); font-size: 0.72rem; line-height: 1.45; }
+.access-state-note { margin: 16px 0 0; padding: 12px 14px; border: 1px solid color-mix(in srgb, var(--primary) 25%, var(--border)); border-radius: 12px; background: var(--primary-soft); color: var(--primary-strong); font-size: 0.78rem; line-height: 1.5; }
+.status-dialog__error { margin: 14px 0 0; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--danger) 28%, var(--border)); border-radius: 11px; background: var(--danger-soft); color: var(--danger); font-size: 0.72rem; font-weight: 650; line-height: 1.45; }
+.status-dialog__footer { display: flex; justify-content: flex-end; gap: 9px; margin-top: 20px; padding-top: 17px; border-top: 1px solid var(--border); }
+.status-dialog__cancel,
+.status-dialog__confirm { min-height: 42px; cursor: pointer; padding: 0 16px; border-radius: 12px; font-size: 0.8rem; font-weight: 760; }
+.status-dialog__cancel { border: 1px solid var(--border); background: var(--background); color: var(--muted); }
+.status-dialog__confirm { border: 0; background: var(--primary); color: var(--primary-contrast); box-shadow: 0 9px 22px color-mix(in srgb, var(--primary) 24%, transparent); }
+.status-dialog button:disabled { cursor: not-allowed; opacity: 0.5; }
+.linked-access-option { display: flex; cursor: pointer; align-items: flex-start; gap: 11px; margin-top: 16px; padding: 14px; border: 1px solid var(--border); border-radius: 13px; background: var(--surface-soft); }
+.linked-access-option input { width: 17px; height: 17px; flex: 0 0 auto; margin-top: 2px; accent-color: var(--primary); }
+.linked-access-option > span { display: flex; flex-direction: column; gap: 4px; }
+.linked-access-option strong { font-size: 0.8rem; }
+.linked-access-option small { color: var(--muted); font-size: 0.72rem; line-height: 1.45; }
+.linked-access-required { display: flex; align-items: flex-start; gap: 10px; margin: 16px 0 0; padding: 12px 14px; border: 1px solid #e7a33a; border-radius: 12px; background: #fff4dc; color: #9a5a00; font-size: 0.78rem; line-height: 1.5; }
+.linked-access-required > svg { width: 17px; flex: 0 0 auto; margin-top: 2px; }
+.linked-access-required strong { display: block; }
+:root[data-theme="dark"] .linked-access-required { border-color: #8a5a13; background: #3c2c12; color: #fbbf5b; }
+
 .directory-edit {
   display: inline-flex;
   min-height: 36px;
@@ -434,6 +497,15 @@
   .registration-dialog__header { padding: 18px; }
   .registration-dialog__body { padding: 15px; }
   .registration-dialog .registration-footer { bottom: -15px; margin: 0 -15px -15px; padding: 14px 15px; }
+  .status-dialog__content { padding: 19px; }
+  .status-options { grid-template-columns: 1fr; }
+  .status-option { min-height: 84px; }
+  .status-dialog__header { grid-template-columns: auto 1fr; }
+  .status-dialog__close { position: absolute; top: 0; right: 0; }
+  .status-dialog__header > div { padding-right: 34px; }
+  .status-dialog__footer { flex-direction: column-reverse; }
+  .status-dialog__cancel,
+  .status-dialog__confirm { width: 100%; }
 }
 
 /* Escala comun para directorios, formularios y mensajes. */

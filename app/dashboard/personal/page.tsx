@@ -9,6 +9,8 @@ import type { GeneralStatus, StaffListItem } from "@/lib/types";
 import { getActiveRoles } from "@/lib/people";
 import { StaffRegistrationDialog } from "@/components/registration-dialogs";
 import { StaffEditDialog } from "@/components/people-edit-dialogs";
+import { GeneralStatusControl } from "@/components/general-status-control";
+import { changeStaffStatus } from "./actions";
 import "../people.css";
 
 export const metadata: Metadata = { title: "Personal" };
@@ -36,6 +38,10 @@ export default async function StaffPage({ searchParams }: PageProps) {
   const canCreate = Boolean(currentUser && required.every((permission) => currentUser.permisos.includes(permission)));
   const editPermissions = ["personas.actualizar", "usuarios.actualizar", "personal.actualizar"];
   const canEdit = Boolean(currentUser && editPermissions.every((permission) => currentUser.permisos.includes(permission)));
+  const canChangeStatus = Boolean(
+    currentUser?.permisos.includes("personal.actualizar") &&
+    currentUser.permisos.includes("usuarios.actualizar"),
+  );
   if (!result.ok) return <section className="directory-page"><div className="directory-message"><b>!</b><div><h2>{result.status === 403 ? "Acceso restringido" : "No pudimos cargar el personal"}</h2><p>{result.status === 403 ? "Tu cuenta no tiene permiso para consultar el personal." : result.message}</p></div></div></section>;
 
   const rolesResult = canCreate ? await getActiveRoles() : null;
@@ -52,9 +58,9 @@ export default async function StaffPage({ searchParams }: PageProps) {
         <td><div className="directory-person"><span>{initials(staff) || "WE"}</span><div><strong>{name(staff)}</strong><small>Personal #{staff.id_personal}</small></div></div></td>
         <td><div className="directory-stacked"><strong>{staff.usuario.correo_acceso}</strong><small>@{staff.usuario.nombre_usuario || "sin-usuario"}</small></div></td>
         <td><div className="directory-stacked"><strong>{staff.cargo}</strong><small>{staff.profesion}</small></div></td>
-        <td><span className="directory-role">{staff.usuario.rol.nombre}</span></td><td><span className="directory-main-value">{date(staff.fecha_ingreso)}</span></td><td><StatusBadge status={staff.estado} /></td>{canEdit && <td><StaffEditDialog staff={staff} /></td>}
+        <td><span className="directory-role">{staff.usuario.rol.nombre}</span></td><td><span className="directory-main-value">{date(staff.fecha_ingreso)}</span></td><td>{canChangeStatus ? <GeneralStatusControl id={staff.id_personal} name={name(staff)} status={staff.estado} reason={staff.motivo_baja} accessPolicy="required" action={changeStaffStatus} /> : <StatusBadge status={staff.estado} />}</td>{canEdit && <td><StaffEditDialog staff={staff} /></td>}
       </tr>)}</tbody></table></div></div>
-      <div className="directory-mobile-list">{data.map((staff) => <article className="directory-mobile-card" key={staff.id_personal}><div className="directory-card-head"><div className="directory-person"><span>{initials(staff) || "WE"}</span><div><strong>{name(staff)}</strong><small>{staff.usuario.correo_acceso}</small></div></div><StatusBadge status={staff.estado} /></div><dl><div><dt>Cargo</dt><dd>{staff.cargo}</dd></div><div><dt>Profesión</dt><dd>{staff.profesion}</dd></div><div><dt>Rol</dt><dd>{staff.usuario.rol.nombre}</dd></div><div><dt>Ingreso</dt><dd>{date(staff.fecha_ingreso)}</dd></div></dl>{canEdit && <div className="directory-card-actions"><StaffEditDialog staff={staff} /></div>}</article>)}</div>
+      <div className="directory-mobile-list">{data.map((staff) => <article className="directory-mobile-card" key={staff.id_personal}><div className="directory-card-head"><div className="directory-person"><span>{initials(staff) || "WE"}</span><div><strong>{name(staff)}</strong><small>{staff.usuario.correo_acceso}</small></div></div>{canChangeStatus ? <GeneralStatusControl id={staff.id_personal} name={name(staff)} status={staff.estado} reason={staff.motivo_baja} accessPolicy="required" action={changeStaffStatus} /> : <StatusBadge status={staff.estado} />}</div><dl><div><dt>Cargo</dt><dd>{staff.cargo}</dd></div><div><dt>Profesión</dt><dd>{staff.profesion}</dd></div><div><dt>Rol</dt><dd>{staff.usuario.rol.nombre}</dd></div><div><dt>Ingreso</dt><dd>{date(staff.fecha_ingreso)}</dd></div></dl>{canEdit && <div className="directory-card-actions"><StaffEditDialog staff={staff} /></div>}</article>)}</div>
       <footer className="directory-footer"><p>Mostrando <strong>{total ? (current - 1) * limit + 1 : 0}–{Math.min(current * limit, total)}</strong> de <strong>{total}</strong></p>{pages > 1 && <nav><Link className={current === 1 ? "disabled" : ""} href={url(current - 1, search, estado)}><ChevronLeftIcon /></Link><span>Página {current} de {pages}</span><Link className={current === pages ? "disabled" : ""} href={url(current + 1, search, estado)}><ChevronRightIcon /></Link></nav>}</footer>
     </> : <div className="directory-message"><b>i</b><div><h2>No encontramos personal</h2><p>{search || estado ? "Prueba con otros filtros." : "Todavía no existen empleados registrados."}</p></div>{(search || estado) && <Link className="directory-clear" href="/dashboard/personal">Ver todos</Link>}</div>}
   </section>;

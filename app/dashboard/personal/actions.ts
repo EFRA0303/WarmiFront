@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { randomUUID } from "node:crypto";
 import { getSessionToken } from "@/lib/auth";
 import { backendUrl, readApiMessage } from "@/lib/backend";
-import type { Gender, RegistrationState } from "@/lib/types";
+import type { Gender, GeneralStatus, RegistrationState } from "@/lib/types";
 
 function text(formData: FormData, name: string) {
   const value = formData.get(name);
@@ -168,4 +168,43 @@ export async function updateStaff(
   revalidatePath("/dashboard/personal");
   const fullName = [text(formData, "nombre"), text(formData, "ap_paterno"), text(formData, "ap_materno")].filter(Boolean).join(" ");
   return { resultId: randomUUID(), outcome: "success", title: "Empleado actualizado", message: `Los datos de ${fullName} se actualizaron correctamente.` };
+}
+
+export async function changeStaffStatus(
+  staffId: number,
+  status: GeneralStatus,
+  reason: string,
+  updateAccess: boolean,
+): Promise<RegistrationState> {
+  if (!updateAccess) {
+    return { resultId: randomUUID(), outcome: "error", title: "Acceso no sincronizado", message: "El estado del empleado debe actualizarse junto con su cuenta de usuario." };
+  }
+  if (!Number.isInteger(staffId) || staffId < 1 || !new Set<GeneralStatus>(["ACTIVO", "BAJA"]).has(status)) {
+    return { resultId: randomUUID(), outcome: "error", title: "Solicitud inválida", message: "No se pudo identificar al empleado o el estado solicitado." };
+  }
+  const normalizedReason = reason.trim();
+  if (status === "BAJA" && !normalizedReason) {
+    return { resultId: randomUUID(), outcome: "error", title: "Motivo requerido", message: "Indica el motivo antes de dar de baja al empleado." };
+  }
+
+  const token = await getSessionToken();
+  if (!token) return { resultId: randomUUID(), outcome: "error", title: "La sesión venció", message: "Vuelve a iniciar sesión para cambiar el estado." };
+
+  try {
+    const response = await fetch(backendUrl(`/personal/${staffId}/estado`), {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        estado: status,
+        motivo_baja: status === "BAJA" ? normalizedReason : undefined,
+      }),
+      cache: "no-store",
+    });
+    if (!response.ok) return { resultId: randomUUID(), outcome: "error", title: "Estado no actualizado", message: (await readApiMessage(response)) || "No fue posible cambiar el estado del empleado." };
+  } catch {
+    return { resultId: randomUUID(), outcome: "error", title: "Servidor no disponible", message: "No pudimos conectar con el servidor. Inténtalo nuevamente." };
+  }
+
+  revalidatePath("/dashboard/personal");
+  return { resultId: randomUUID(), outcome: "success", title: "Estado actualizado", message: status === "ACTIVO" ? "El empleado y su cuenta fueron reactivados correctamente." : "El empleado y su cuenta fueron dados de baja correctamente." };
 }
