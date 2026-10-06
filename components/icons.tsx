@@ -204,6 +204,25 @@ export const EditIcon = (props: IconProps) => (
   </IconBase>
 );
 
+export const TrashIcon = (props: IconProps) => (
+  <IconBase {...props}>
+    <path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14M10 11v6M14 11v6" />
+  </IconBase>
+);
+
+export const PlusIcon = (props: IconProps) => (
+  <IconBase {...props}>
+    <path d="M12 5v14M5 12h14" />
+  </IconBase>
+);
+
+export const HistoryIcon = (props: IconProps) => (
+  <IconBase {...props}>
+    <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+    <path d="M3 3v5h5M12 7v5l3 2" />
+  </IconBase>
+);
+
 export const ShieldIcon = (props: IconProps) => (
   <IconBase {...props}>
     <path d="M12 22c5-2 8-6 8-11V5c-3.5 0-6-.5-8-2-2 1.5-4.5 2-8 2v6c0 5 3 9 8 11Z" />

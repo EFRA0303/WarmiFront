@@ -7,6 +7,7 @@ import { CloseIcon, EditIcon } from "@/components/icons";
 import { PersonFields } from "@/components/person-fields";
 import { SubmissionResultDialog } from "@/components/submission-result-dialog";
 import type { PatientListItem, RegistrationState, StaffListItem } from "@/lib/types";
+import { StaffVisualFields } from "@/components/staff-visual-fields";
 
 const initialState: RegistrationState = {};
 
@@ -142,6 +143,12 @@ function StaffEditForm({ staff, close }: { staff: StaffListItem; close: () => vo
           <span>3</span>
           <div><h2>Datos laborales</h2><p>Actualiza la función y fecha de ingreso del empleado.</p></div>
         </div>
+        <StaffVisualFields
+          initialColor={staff.color_agenda}
+          initialPhotoUrl={staff.usuario.foto_perfil_ruta ? `/api/users/${staff.usuario.id_usuario}/profile-photo` : undefined}
+          photoError={error("foto_perfil")}
+          colorError={error("color_agenda")}
+        />
         <div className="registration-grid registration-grid--three">
           <label className="registration-field">
             <span>Profesión <b>*</b></span>

@@ -48,16 +48,16 @@ const navigation: Array<{ label: string; items: NavItem[] }> = [
         permission: "usuarios.leer",
       },
       {
-        label: "Pacientes",
-        href: "/dashboard/pacientes",
-        icon: UsersIcon,
-        permission: "pacientes.leer",
-      },
-      {
         label: "Personal",
         href: "/dashboard/personal",
         icon: BriefcaseIcon,
         permission: "personal.leer",
+      },
+      {
+        label: "Pacientes",
+        href: "/dashboard/pacientes",
+        icon: UsersIcon,
+        permission: "pacientes.leer",
       },
     ],
   },

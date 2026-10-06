@@ -24,8 +24,15 @@ export async function updateOwnProfile(
     if (!text(formData, field)) fieldErrors[field] = "Este campo es obligatorio.";
   }
   const genero = text(formData, "genero") as Gender;
+  const profilePhoto = formData.get("foto_perfil");
   if (!new Set<Gender>(["FEMENINO", "MASCULINO"]).has(genero))
     fieldErrors.genero = "Selecciona el género.";
+  if (profilePhoto instanceof File && profilePhoto.size > 0) {
+    if (profilePhoto.size > 5 * 1024 * 1024)
+      fieldErrors.foto_perfil = "La imagen no puede superar los 5 MB.";
+    else if (!["image/jpeg", "image/png", "image/webp"].includes(profilePhoto.type))
+      fieldErrors.foto_perfil = "Usa una imagen JPG, PNG o WEBP.";
+  }
   if (Object.keys(fieldErrors).length) return { fieldErrors };
 
   const token = await getSessionToken();
@@ -62,6 +69,21 @@ export async function updateOwnProfile(
           (await readApiMessage(response)) ||
           "No fue posible actualizar tus datos personales.",
       };
+    if (profilePhoto instanceof File && profilePhoto.size > 0) {
+      const photoData = new FormData();
+      photoData.set("foto", profilePhoto);
+      const photoResponse = await fetch(backendUrl("/auth/me/foto-perfil"), {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: photoData,
+        cache: "no-store",
+      });
+      if (!photoResponse.ok)
+        return {
+          resultId: randomUUID(),
+          message: `Tus datos se guardaron, pero la foto no pudo actualizarse: ${(await readApiMessage(photoResponse)) || "inténtalo nuevamente"}.`,
+        };
+    }
   } catch {
     return {
       resultId: randomUUID(),

@@ -29,6 +29,7 @@ export type CurrentUser = {
   id_usuario: number;
   correo_acceso: string;
   nombre_usuario: string | null;
+  foto_perfil_ruta: string | null;
   estado: string;
   ultimo_acceso_en: string | null;
   permisos: string[];
@@ -70,6 +71,8 @@ export type PersonSummary = {
   usuario?: {
     id_usuario: number;
     estado: UserStatus;
+    correo_acceso: string;
+    foto_perfil_ruta: string | null;
   } | null;
 };
 
@@ -90,6 +93,7 @@ export type StaffListItem = {
   profesion: string;
   cargo: string;
   fecha_ingreso: string;
+  color_agenda: string;
   estado: GeneralStatus;
   motivo_baja: string | null;
   created_at: string;
@@ -98,6 +102,7 @@ export type StaffListItem = {
     id_usuario: number;
     correo_acceso: string;
     nombre_usuario: string | null;
+    foto_perfil_ruta: string | null;
     persona: PersonSummary;
     rol: {
       id_rol: number;
@@ -159,6 +164,7 @@ export type UserListItem = {
   id_rol: number;
   correo_acceso: string;
   nombre_usuario: string | null;
+  foto_perfil_ruta: string | null;
   estado: UserStatus;
   motivo_estado: string | null;
   intentos_fallidos: number;

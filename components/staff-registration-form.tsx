@@ -10,6 +10,7 @@ import { SubmissionResultDialog } from "@/components/submission-result-dialog";
 import { PasswordStrength } from "@/components/password-strength";
 import { checkRegistrationAvailability } from "@/app/dashboard/registration-actions";
 import type { RegistrationState, RoleListItem } from "@/lib/types";
+import { StaffVisualFields } from "@/components/staff-visual-fields";
 
 const initialState: RegistrationState = {};
 
@@ -100,6 +101,7 @@ export function StaffRegistrationForm({ roles, onCancel, onSuccess }: { roles: R
             <p>Define su función dentro del establecimiento.</p>
           </div>
         </div>
+        <StaffVisualFields photoError={error("foto_perfil")} colorError={error("color_agenda")} />
         <div className="registration-grid registration-grid--three">
           <label className="registration-field">
             <span>Profesión <b>*</b></span>

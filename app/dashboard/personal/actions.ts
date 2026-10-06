@@ -40,6 +40,16 @@ export async function registerStaff(
     fieldErrors.id_rol = "Selecciona un rol.";
   const password = text(formData, "contrasena");
   const confirmation = text(formData, "confirmar_contrasena");
+  const colorAgenda = text(formData, "color_agenda").toUpperCase();
+  const profilePhoto = formData.get("foto_perfil");
+  if (!/^#[0-9A-F]{6}$/.test(colorAgenda))
+    fieldErrors.color_agenda = "Selecciona un color válido.";
+  if (profilePhoto instanceof File && profilePhoto.size > 0) {
+    if (profilePhoto.size > 5 * 1024 * 1024)
+      fieldErrors.foto_perfil = "La imagen no puede superar los 5 MB.";
+    else if (!["image/jpeg", "image/png", "image/webp"].includes(profilePhoto.type))
+      fieldErrors.foto_perfil = "Usa una imagen JPG, PNG o WEBP.";
+  }
   if (password.length < 12 || password.length > 72)
     fieldErrors.contrasena = "Debe tener entre 12 y 72 caracteres.";
   else if (password !== confirmation)
@@ -83,6 +93,7 @@ export async function registerStaff(
           profesion: text(formData, "profesion"),
           cargo: text(formData, "cargo"),
           fecha_ingreso: text(formData, "fecha_ingreso"),
+          color_agenda: colorAgenda,
         },
       }),
       cache: "no-store",
@@ -94,6 +105,26 @@ export async function registerStaff(
         title: "Empleado no creado",
         message: (await readApiMessage(response)) || "No fue posible registrar al empleado.",
       };
+    const created = (await response.json()) as { usuario?: { id_usuario?: number } };
+    if (profilePhoto instanceof File && profilePhoto.size > 0 && created.usuario?.id_usuario) {
+      const photoData = new FormData();
+      photoData.set("foto", profilePhoto);
+      const photoResponse = await fetch(backendUrl(`/usuarios/${created.usuario.id_usuario}/foto-perfil`), {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: photoData,
+        cache: "no-store",
+      });
+      if (!photoResponse.ok) {
+        revalidatePath("/dashboard/personal");
+        return {
+          resultId: randomUUID(),
+          outcome: "success",
+          title: "Empleado creado con una advertencia",
+          message: `La cuenta fue creada, pero la foto no pudo guardarse: ${(await readApiMessage(photoResponse)) || "vuelve a intentarlo desde la edición"}.`,
+        };
+      }
+    }
   } catch {
     return {
       resultId: randomUUID(),
@@ -126,7 +157,14 @@ export async function updateStaff(
   const fieldErrors: Record<string, string> = {};
   for (const field of required) if (!text(formData, field)) fieldErrors[field] = "Este campo es obligatorio.";
   const genero = text(formData, "genero") as Gender;
+  const colorAgenda = text(formData, "color_agenda").toUpperCase();
+  const profilePhoto = formData.get("foto_perfil");
   if (!new Set<Gender>(["FEMENINO", "MASCULINO"]).has(genero)) fieldErrors.genero = "Selecciona el género.";
+  if (!/^#[0-9A-F]{6}$/.test(colorAgenda)) fieldErrors.color_agenda = "Selecciona un color válido.";
+  if (profilePhoto instanceof File && profilePhoto.size > 0) {
+    if (profilePhoto.size > 5 * 1024 * 1024) fieldErrors.foto_perfil = "La imagen no puede superar los 5 MB.";
+    else if (!["image/jpeg", "image/png", "image/webp"].includes(profilePhoto.type)) fieldErrors.foto_perfil = "Usa una imagen JPG, PNG o WEBP.";
+  }
   if (Object.keys(fieldErrors).length) return { fieldErrors };
 
   const token = await getSessionToken();
@@ -156,11 +194,32 @@ export async function updateStaff(
           profesion: text(formData, "profesion"),
           cargo: text(formData, "cargo"),
           fecha_ingreso: text(formData, "fecha_ingreso"),
+          color_agenda: colorAgenda,
         },
       }),
       cache: "no-store",
     });
     if (!response.ok) return { resultId: randomUUID(), outcome: "error", title: "Cambios no guardados", message: (await readApiMessage(response)) || "No fue posible actualizar al empleado." };
+    const updated = (await response.json()) as { usuario?: { id_usuario?: number } };
+    if (profilePhoto instanceof File && profilePhoto.size > 0 && updated.usuario?.id_usuario) {
+      const photoData = new FormData();
+      photoData.set("foto", profilePhoto);
+      const photoResponse = await fetch(backendUrl(`/usuarios/${updated.usuario.id_usuario}/foto-perfil`), {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: photoData,
+        cache: "no-store",
+      });
+      if (!photoResponse.ok) {
+        revalidatePath("/dashboard/personal");
+        return {
+          resultId: randomUUID(),
+          outcome: "success",
+          title: "Datos actualizados con una advertencia",
+          message: `Los datos se guardaron, pero la foto no pudo actualizarse: ${(await readApiMessage(photoResponse)) || "inténtalo nuevamente"}.`,
+        };
+      }
+    }
   } catch {
     return { resultId: randomUUID(), outcome: "error", title: "Servidor no disponible", message: "No pudimos conectar con el servidor. Inténtalo nuevamente." };
   }

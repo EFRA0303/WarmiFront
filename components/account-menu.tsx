@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { changeOwnPassword, updateOwnProfile } from "@/app/actions/account";
 import { logoutAction } from "@/app/actions/auth";
 import {
@@ -49,6 +50,9 @@ export function AccountMenu({
   const [showCurrent, setShowCurrent] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const initialPhotoUrl = user.foto_perfil_ruta ? `/api/users/${user.id_usuario}/profile-photo` : null;
+  const [profilePhotoPreview, setProfilePhotoPreview] = useState<string | null>(initialPhotoUrl);
+  const [profilePhotoError, setProfilePhotoError] = useState("");
   useCloseDetailsOnOutside(detailsRef);
 
   useEffect(() => {
@@ -66,11 +70,27 @@ export function AccountMenu({
     dialog?.showModal();
   }
 
+  function previewProfilePhoto(file?: File) {
+    setProfilePhotoError("");
+    if (!file) return setProfilePhotoPreview(initialPhotoUrl);
+    if (file.size > 5 * 1024 * 1024) {
+      setProfilePhotoPreview(initialPhotoUrl);
+      return setProfilePhotoError("La imagen no puede superar los 5 MB.");
+    }
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setProfilePhotoPreview(initialPhotoUrl);
+      return setProfilePhotoError("Usa una imagen JPG, PNG o WEBP.");
+    }
+    const reader = new FileReader();
+    reader.onload = () => setProfilePhotoPreview(typeof reader.result === "string" ? reader.result : initialPhotoUrl);
+    reader.readAsDataURL(file);
+  }
+
   return (
     <div className="account-menu">
       <details ref={detailsRef} className="account-menu__details">
         <summary className="topbar-user account-menu__trigger">
-          <span className="topbar-avatar">{initials || "WU"}</span>
+          <span className="topbar-avatar">{initialPhotoUrl ? <Image src={initialPhotoUrl} alt="" width={40} height={40} unoptimized /> : initials || "WU"}</span>
           <span>
             <strong>{displayName}</strong>
             <small>{user.rol?.nombre || "Sin rol"}</small>
@@ -104,6 +124,15 @@ export function AccountMenu({
             <button type="button" onClick={() => profileDialogRef.current?.close()} disabled={profilePending} aria-label="Cerrar"><CloseIcon /></button>
           </header>
           <div className="account-dialog__body account-profile-grid">
+            <label className="account-profile-photo account-profile-grid__wide">
+              <span>Foto de perfil</span>
+              <span className="account-profile-photo__content">
+                <span className="account-profile-photo__preview">{profilePhotoPreview ? <Image src={profilePhotoPreview} alt="Vista previa de la foto" width={86} height={86} unoptimized /> : <UserSettingsIcon />}</span>
+                <span><strong>{initialPhotoUrl ? "Cambiar imagen" : "Seleccionar imagen"}</strong><small>JPG, PNG o WEBP. Peso máximo 5 MB.</small></span>
+              </span>
+              <input name="foto_perfil" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => previewProfilePhoto(event.currentTarget.files?.[0])} />
+              {(profilePhotoError || profileState.fieldErrors?.foto_perfil) && <small>{profilePhotoError || profileState.fieldErrors?.foto_perfil}</small>}
+            </label>
             <label><span>Nombre <b>*</b></span><input name="nombre" required maxLength={100} defaultValue={user.persona.nombre} onInput={normalizeName} aria-invalid={Boolean(profileState.fieldErrors?.nombre)} />{profileState.fieldErrors?.nombre && <small>{profileState.fieldErrors.nombre}</small>}</label>
             <label><span>Apellido paterno <b>*</b></span><input name="ap_paterno" required maxLength={100} defaultValue={user.persona.ap_paterno} onInput={normalizeName} aria-invalid={Boolean(profileState.fieldErrors?.ap_paterno)} />{profileState.fieldErrors?.ap_paterno && <small>{profileState.fieldErrors.ap_paterno}</small>}</label>
             <label><span>Apellido materno</span><input name="ap_materno" maxLength={100} defaultValue={user.persona.ap_materno ?? ""} onInput={normalizeName} /></label>

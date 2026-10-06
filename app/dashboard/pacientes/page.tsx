@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { FaWhatsapp } from "react-icons/fa";
 import { GeneralStatusFilter } from "@/components/directory-controls";
-import { ChevronLeftIcon, ChevronRightIcon, SearchIcon } from "@/components/icons";
+import { ChevronLeftIcon, ChevronRightIcon, HistoryIcon, PlusIcon, SearchIcon } from "@/components/icons";
 import { getCurrentUser } from "@/lib/auth";
 import { getPatients } from "@/lib/people";
 import type { GeneralStatus, PatientListItem } from "@/lib/types";
@@ -11,12 +12,24 @@ import { PatientRegistrationDialog } from "@/components/registration-dialogs";
 import { PatientEditDialog } from "@/components/people-edit-dialogs";
 import { GeneralStatusControl } from "@/components/general-status-control";
 import { DynamicSearchInput } from "@/components/dynamic-search-input";
+import { DirectoryTableActions } from "@/components/directory-table-actions";
 import { changePatientStatus } from "./actions";
 import "../people.css";
 
 export const metadata: Metadata = { title: "Pacientes" };
 const PAGE_SIZE = 10;
 const statuses = new Set<GeneralStatus>(["ACTIVO", "BAJA"]);
+const patientColumns = [
+  { key: "patient", label: "Paciente" },
+  { key: "document", label: "CI" },
+  { key: "occupation", label: "Ocupación" },
+  { key: "contact", label: "Contacto" },
+  { key: "email", label: "Correo" },
+  { key: "birth", label: "Fecha de nacimiento" },
+  { key: "gender", label: "Género" },
+  { key: "status", label: "Estado" },
+  { key: "actions", label: "Acciones" },
+];
 
 type PageProps = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 const one = (value: string | string[] | undefined) => Array.isArray(value) ? value[0] : value;
@@ -29,6 +42,18 @@ function fullName(patient: PatientListItem) {
 function initials(patient: PatientListItem) {
   return [patient.persona.nombre, patient.persona.ap_paterno]
     .filter(Boolean).map((part) => part[0]).join("").toUpperCase();
+}
+
+function birthDate(value: string | null) {
+  if (!value) return "Sin registrar";
+  const parsed = new Date(`${value.slice(0, 10)}T12:00:00`);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return new Intl.DateTimeFormat("es-BO", { day: "2-digit", month: "short", year: "numeric" }).format(parsed);
+}
+
+function PatientActions({ patient }: { patient: PatientListItem }) {
+  const name = fullName(patient);
+  return <div className="patient-row-actions"><PatientEditDialog patient={patient} /><button type="button" className="directory-action-placeholder directory-action-placeholder--add" title="Nueva atención: disponible próximamente" aria-label={`Nueva atención para ${name} próximamente`} disabled><PlusIcon /></button><button type="button" className="directory-action-placeholder" title="Historial clínico: disponible próximamente" aria-label={`Historial clínico de ${name} próximamente`} disabled><HistoryIcon /></button></div>;
 }
 
 function url(page: number, search: string, estado?: GeneralStatus) {
@@ -69,7 +94,7 @@ export default async function PatientsPage({ searchParams }: PageProps) {
   const current = Math.min(page, pages);
 
   return (
-    <section className="directory-page">
+    <section className="directory-page" data-directory-scope="patients">
       <header className="directory-heading">
         <div>
           <span className="page-eyebrow">GESTIÓN CLÍNICA</span>
@@ -80,6 +105,8 @@ export default async function PatientsPage({ searchParams }: PageProps) {
       </header>
 
       {one(params.creado) === "1" && <div className="directory-success">Paciente registrado correctamente.</div>}
+
+      <DirectoryTableActions scope="patients" fileName="pacientes-warmi" columns={patientColumns} showActions={canEdit} />
 
       <div className="directory-toolbar">
         <form action="/dashboard/pacientes" method="get">
@@ -101,15 +128,18 @@ export default async function PatientsPage({ searchParams }: PageProps) {
           <div className="directory-table-card">
             <div className="directory-table-scroll">
               <table className="directory-table directory-table--patients">
-                <thead><tr><th>Paciente</th><th>Documento</th><th>Contacto</th><th>Ocupación</th><th>Estado</th>{canEdit && <th>Acciones</th>}</tr></thead>
+                <thead><tr><th data-directory-column="patient">Paciente</th><th data-directory-column="document">CI</th><th data-directory-column="occupation">Ocupación</th><th data-directory-column="contact">Contacto</th><th data-directory-column="email">Correo</th><th data-directory-column="birth">Fecha de nacimiento</th><th data-directory-column="gender">Género</th><th data-directory-column="status">Estado</th>{canEdit && <th data-directory-column="actions">Acciones</th>}</tr></thead>
                 <tbody>{data.map((patient) => (
                   <tr key={patient.id_paciente}>
-                    <td><div className="directory-person"><span>{initials(patient) || "WP"}</span><div><strong>{fullName(patient)}</strong><small>Paciente #{patient.id_paciente}</small></div></div></td>
-                    <td><span className="directory-main-value">{patient.persona.ci || "Sin registrar"}</span></td>
-                    <td><div className="directory-stacked"><strong className="patient-whatsapp-phone"><FaWhatsapp aria-hidden="true" />{patient.persona.telefono1}</strong><small>{patient.persona.telefono2 || "Sin teléfono alternativo"}</small></div></td>
-                    <td><span className="directory-main-value">{patient.ocupacion || "Sin registrar"}</span></td>
-                    <td>{canChangeStatus ? <GeneralStatusControl id={patient.id_paciente} name={fullName(patient)} status={patient.estado} reason={patient.motivo_baja} accessPolicy={patient.persona.usuario && canChangeUserStatus ? "optional" : "none"} action={changePatientStatus} /> : <StatusBadge status={patient.estado} />}</td>
-                    {canEdit && <td><PatientEditDialog patient={patient} /></td>}
+                    <td data-directory-column="patient"><div className="directory-person">{patient.persona.usuario?.foto_perfil_ruta ? <span className="directory-person__photo"><Image src={`/api/users/${patient.persona.usuario.id_usuario}/profile-photo`} alt="" width={40} height={40} unoptimized /></span> : <span>{initials(patient) || "WP"}</span>}<div><strong>{fullName(patient)}</strong><small>Paciente #{patient.id_paciente}</small></div></div></td>
+                    <td data-directory-column="document"><span className="directory-main-value">{patient.persona.ci || "Sin registrar"}</span></td>
+                    <td data-directory-column="occupation"><span className="directory-main-value">{patient.ocupacion || "Sin registrar"}</span></td>
+                    <td data-directory-column="contact"><div className="directory-stacked"><strong className="patient-whatsapp-phone"><FaWhatsapp aria-hidden="true" />{patient.persona.telefono1}</strong><small>{patient.persona.telefono2 || "Sin teléfono alternativo"}</small></div></td>
+                    <td data-directory-column="email"><span className="directory-main-value directory-email">{patient.persona.usuario?.correo_acceso || "Sin cuenta de usuario"}</span></td>
+                    <td data-directory-column="birth"><span className="directory-main-value">{birthDate(patient.persona.fecha_nac)}</span></td>
+                    <td data-directory-column="gender"><span className="directory-main-value">{patient.persona.genero === "FEMENINO" ? "Femenino" : "Masculino"}</span></td>
+                    <td data-directory-column="status">{canChangeStatus ? <GeneralStatusControl id={patient.id_paciente} name={fullName(patient)} status={patient.estado} reason={patient.motivo_baja} accessPolicy={patient.persona.usuario && canChangeUserStatus ? "optional" : "none"} action={changePatientStatus} /> : <StatusBadge status={patient.estado} />}</td>
+                    {canEdit && <td data-directory-column="actions"><PatientActions patient={patient} /></td>}
                   </tr>
                 ))}</tbody>
               </table>
@@ -117,9 +147,9 @@ export default async function PatientsPage({ searchParams }: PageProps) {
           </div>
           <div className="directory-mobile-list">{data.map((patient) => (
             <article className="directory-mobile-card" key={patient.id_paciente}>
-              <div className="directory-card-head"><div className="directory-person"><span>{initials(patient) || "WP"}</span><div><strong>{fullName(patient)}</strong><small>{patient.persona.ci || `Paciente #${patient.id_paciente}`}</small></div></div>{canChangeStatus ? <GeneralStatusControl id={patient.id_paciente} name={fullName(patient)} status={patient.estado} reason={patient.motivo_baja} accessPolicy={patient.persona.usuario && canChangeUserStatus ? "optional" : "none"} action={changePatientStatus} /> : <StatusBadge status={patient.estado} />}</div>
-              <dl><div><dt>Teléfono</dt><dd className="patient-whatsapp-phone"><FaWhatsapp aria-hidden="true" />{patient.persona.telefono1}</dd></div><div><dt>Ocupación</dt><dd>{patient.ocupacion || "Sin registrar"}</dd></div></dl>
-              {canEdit && <div className="directory-card-actions"><PatientEditDialog patient={patient} /></div>}
+              <div className="directory-card-head"><div className="directory-person">{patient.persona.usuario?.foto_perfil_ruta ? <span className="directory-person__photo"><Image src={`/api/users/${patient.persona.usuario.id_usuario}/profile-photo`} alt="" width={40} height={40} unoptimized /></span> : <span>{initials(patient) || "WP"}</span>}<div><strong>{fullName(patient)}</strong><small>{patient.persona.ci || `Paciente #${patient.id_paciente}`}</small></div></div>{canChangeStatus ? <GeneralStatusControl id={patient.id_paciente} name={fullName(patient)} status={patient.estado} reason={patient.motivo_baja} accessPolicy={patient.persona.usuario && canChangeUserStatus ? "optional" : "none"} action={changePatientStatus} /> : <StatusBadge status={patient.estado} />}</div>
+              <dl><div><dt>Ocupación</dt><dd>{patient.ocupacion || "Sin registrar"}</dd></div><div><dt>Contacto</dt><dd className="patient-whatsapp-phone"><FaWhatsapp aria-hidden="true" />{patient.persona.telefono1}</dd></div><div><dt>Correo</dt><dd>{patient.persona.usuario?.correo_acceso || "Sin cuenta"}</dd></div><div><dt>Nacimiento</dt><dd>{birthDate(patient.persona.fecha_nac)}</dd></div><div><dt>Género</dt><dd>{patient.persona.genero === "FEMENINO" ? "Femenino" : "Masculino"}</dd></div></dl>
+              {canEdit && <div className="directory-card-actions"><PatientActions patient={patient} /></div>}
             </article>
           ))}</div>
           <DirectoryFooter current={current} pages={pages} total={total} limit={limit} search={search} estado={estado} />

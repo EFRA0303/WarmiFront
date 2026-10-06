@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   CheckIcon,
   ChevronRightIcon,
@@ -8,6 +8,7 @@ import {
 } from "@/components/icons";
 import type { UserStatus, UserType } from "@/lib/types";
 import { useCloseDetailsOnOutside } from "@/components/use-close-details-on-outside";
+import { usePersistentColumns } from "@/components/use-persistent-columns";
 
 const statusOptions: Array<{ value: "" | UserStatus; label: string }> = [
   { value: "", label: "Todos" },
@@ -31,6 +32,7 @@ const columns = [
   { key: "status", label: "Estado" },
   { key: "actions", label: "Acciones" },
 ] as const;
+const userColumnSelector = (key: string) => `.users-col-${key}`;
 
 export function StatusFilter({ initialValue }: { initialValue?: UserStatus }) {
   const [value, setValue] = useState<"" | UserStatus>(initialValue || "");
@@ -121,10 +123,19 @@ export function UserTypeFilter({ initialValue }: { initialValue?: UserType }) {
 export function ColumnSelector({ showActions }: { showActions: boolean }) {
   const detailsRef = useRef<HTMLDetailsElement>(null);
   useCloseDetailsOnOutside(detailsRef);
-
-  function toggleColumn(key: (typeof columns)[number]["key"], visible: boolean) {
-    document.documentElement.classList.toggle(`users-hide-${key}`, !visible);
-  }
+  const activeColumns = useMemo(
+    () => columns.filter((column) => column.key !== "actions" || showActions),
+    [showActions],
+  );
+  const { visibility, toggleColumn } = usePersistentColumns({
+    storageKey: "warmi:table-columns:users",
+    columns: activeColumns,
+    rootSelector: ".users-page",
+    tableSelector: ".users-table",
+    columnSelector: userColumnSelector,
+    minimumWidth: 720,
+    widthPerColumn: 155,
+  });
 
   return (
     <details ref={detailsRef} className="column-selector">
@@ -138,11 +149,11 @@ export function ColumnSelector({ showActions }: { showActions: boolean }) {
           <strong>Columnas visibles</strong>
           <small>Personaliza la tabla</small>
         </div>
-        {columns.filter((column) => column.key !== "actions" || showActions).map((column) => (
+        {activeColumns.map((column) => (
           <label key={column.key}>
             <input
               type="checkbox"
-              defaultChecked
+              checked={visibility[column.key] !== false}
               onChange={(event) => toggleColumn(column.key, event.target.checked)}
             />
             <span className="column-checkbox">

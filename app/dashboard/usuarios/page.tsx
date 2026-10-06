@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
@@ -282,7 +283,7 @@ export default async function UsersPage({ searchParams }: PageProps) {
                     <tr key={user.id_usuario}>
                       <td className="users-col-person">
                         <div className="person-cell">
-                          <span className="person-avatar">{userInitials(user) || "WU"}</span>
+                          <span className={`person-avatar ${user.foto_perfil_ruta ? "person-avatar--photo" : ""}`}>{user.foto_perfil_ruta ? <Image src={`/api/users/${user.id_usuario}/profile-photo`} alt="" width={40} height={40} unoptimized /> : userInitials(user) || "WU"}</span>
                           <span>
                             <strong>{userName(user) || "Sin nombre registrado"}</strong>
                             <small>Usuario #{user.id_usuario}</small>
@@ -352,7 +353,7 @@ export default async function UsersPage({ searchParams }: PageProps) {
               <article className="user-mobile-card" key={user.id_usuario}>
                 <div className="mobile-user-head">
                   <div className="person-cell users-col-person">
-                    <span className="person-avatar">{userInitials(user) || "WU"}</span>
+                    <span className={`person-avatar ${user.foto_perfil_ruta ? "person-avatar--photo" : ""}`}>{user.foto_perfil_ruta ? <Image src={`/api/users/${user.id_usuario}/profile-photo`} alt="" width={40} height={40} unoptimized /> : userInitials(user) || "WU"}</span>
                     <span>
                       <strong>{userName(user) || "Sin nombre registrado"}</strong>
                       <small>{user.correo_acceso}</small>
