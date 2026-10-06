@@ -10,6 +10,7 @@ import { getActiveRoles } from "@/lib/people";
 import { StaffRegistrationDialog } from "@/components/registration-dialogs";
 import { StaffEditDialog } from "@/components/people-edit-dialogs";
 import { GeneralStatusControl } from "@/components/general-status-control";
+import { DynamicSearchInput } from "@/components/dynamic-search-input";
 import { changeStaffStatus } from "./actions";
 import "../people.css";
 
@@ -52,7 +53,7 @@ export default async function StaffPage({ searchParams }: PageProps) {
   return <section className="directory-page">
     <header className="directory-heading"><div><span className="page-eyebrow">EQUIPO DE TRABAJO</span><h1>Personal</h1><p>Gestiona las cuentas y datos laborales del equipo.</p></div>{canCreate && rolesResult?.ok && <StaffRegistrationDialog roles={rolesResult.value.data} />}</header>
     {one(params.creado) === "1" && <div className="directory-success">Empleado creado correctamente.</div>}
-    <div className="directory-toolbar"><form action="/dashboard/personal" method="get"><label className="directory-search"><SearchIcon /><input name="search" type="search" defaultValue={search} placeholder="Buscar por nombre, correo, profesión o cargo..." maxLength={150} /></label><GeneralStatusFilter initialValue={estado} /><button className="directory-filter" type="submit">Buscar</button>{(search || estado) && <Link className="directory-clear" href="/dashboard/personal">Limpiar</Link>}</form></div>
+    <div className="directory-toolbar"><form action="/dashboard/personal" method="get"><label className="directory-search"><SearchIcon /><DynamicSearchInput id="staff-search" initialValue={search} placeholder="Buscar por nombre, usuario, correo, profesión o cargo..." basePath="/dashboard/personal" /></label><GeneralStatusFilter initialValue={estado} /></form></div>
     {data.length ? <>
       <div className="directory-table-card"><div className="directory-table-scroll"><table className="directory-table directory-table--staff"><thead><tr><th>Empleado</th><th>Cuenta</th><th>Función</th><th>Rol</th><th>Ingreso</th><th>Estado</th>{canEdit && <th>Acciones</th>}</tr></thead><tbody>{data.map((staff) => <tr key={staff.id_personal}>
         <td><div className="directory-person"><span>{initials(staff) || "WE"}</span><div><strong>{name(staff)}</strong><small>Personal #{staff.id_personal}</small></div></div></td>

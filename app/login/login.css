@@ -275,6 +275,7 @@
   display: flex;
   height: 55px;
   align-items: center;
+  overflow: hidden;
   border: 1px solid var(--border);
   border-radius: 15px;
   background: var(--surface);
@@ -312,6 +313,22 @@
 
 .field-control input::placeholder {
   color: var(--subtle);
+}
+
+.field-control input:-webkit-autofill,
+.field-control input:-webkit-autofill:hover,
+.field-control input:-webkit-autofill:focus,
+.field-control input:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--foreground);
+  caret-color: var(--foreground);
+  box-shadow: 0 0 0 1000px var(--surface) inset;
+  transition: background-color 9999s ease-out 0s;
+}
+
+.field-control input:autofill {
+  color: var(--foreground);
+  caret-color: var(--foreground);
+  box-shadow: 0 0 0 1000px var(--surface) inset;
 }
 
 .field-control input:disabled {

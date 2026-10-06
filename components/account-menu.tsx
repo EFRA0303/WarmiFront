@@ -13,6 +13,7 @@ import {
   UserSettingsIcon,
 } from "@/components/icons";
 import { PasswordStrength } from "@/components/password-strength";
+import { useCloseDetailsOnOutside } from "@/components/use-close-details-on-outside";
 import type { AccountActionState, CurrentUser } from "@/lib/types";
 import "./account-menu.css";
 
@@ -48,6 +49,7 @@ export function AccountMenu({
   const [showCurrent, setShowCurrent] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  useCloseDetailsOnOutside(detailsRef);
 
   useEffect(() => {
     if (profileState.success) router.refresh();

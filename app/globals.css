@@ -190,3 +190,23 @@ a {
   opacity: 1;
   transform: scale(1) rotate(0);
 }
+
+.dynamic-search-progress {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  opacity: 0;
+}
+
+.dynamic-search-progress--active {
+  border-color: color-mix(in srgb, var(--primary) 22%, transparent);
+  border-top-color: var(--primary);
+  opacity: 1;
+  animation: dynamic-search-spin 650ms linear infinite;
+}
+
+@keyframes dynamic-search-spin {
+  to { transform: rotate(360deg); }
+}

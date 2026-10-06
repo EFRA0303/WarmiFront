@@ -8,9 +8,6 @@ import type {
   RoleListItem,
   RolePermissionAssignment,
   RoleWithPermissions,
-  UserListItem,
-  UserPermissionContext,
-  UserPermissionAssignment,
 } from "@/lib/types";
 
 export type AccessResult<T> =
@@ -54,25 +51,4 @@ export async function getRolesAndPermissions(): Promise<AccessResult<{ roles: Ro
       })),
     },
   };
-}
-
-export async function getUsersPermissionContexts(users: UserListItem[]): Promise<Record<number, UserPermissionContext>> {
-  const token = await getSessionToken();
-  if (!token || !users.length) return {};
-  const permissionsResult = await authorizedGet<PaginatedResponse<PermissionListItem>>("/permisos?page=1&limit=100&estado=ACTIVO", token);
-  if (!permissionsResult.ok) return {};
-  const roleIds = [...new Set(users.map((user) => user.id_rol))];
-  const [roleResults, userResults] = await Promise.all([
-    Promise.all(roleIds.map(async (id) => [id, await authorizedGet<RolePermissionAssignment[]>(`/roles/${id}/permisos`, token)] as const)),
-    Promise.all(users.map(async (user) => [user.id_usuario, await authorizedGet<UserPermissionAssignment[]>(`/permisos/usuarios/${user.id_usuario}`, token)] as const)),
-  ]);
-  const byRole = new Map<number, number[]>();
-  for (const [id, result] of roleResults) if (result.ok) byRole.set(id, result.value.map((item) => item.id_permiso));
-  const byUser = new Map<number, UserPermissionAssignment[]>();
-  for (const [id, result] of userResults) if (result.ok) byUser.set(id, result.value);
-  return Object.fromEntries(users.map((user) => [user.id_usuario, {
-    permissions: permissionsResult.value.data,
-    rolePermissionIds: byRole.get(user.id_rol) ?? [],
-    exceptions: byUser.get(user.id_usuario) ?? [],
-  }]));
 }

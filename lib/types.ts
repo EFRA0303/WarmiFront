@@ -194,6 +194,13 @@ export type UserListItem = {
   } | null;
 };
 
+export type UserPresenceSnapshot = {
+  id_usuario: number;
+  en_linea: boolean;
+  ultima_actividad_en: string | null;
+  ultima_desconexion_en: string | null;
+};
+
 export type PaginatedResponse<T> = {
   data: T[];
   total: number;

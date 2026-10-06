@@ -18,10 +18,16 @@ import {
 import { UserStatusAction } from "@/components/user-status-action";
 import { UserAccessStatusAction } from "@/components/user-access-status-action";
 import { UserPermissionAction } from "@/components/user-permission-action";
+import {
+  UserPresenceStatus,
+  UsersPresenceProvider,
+} from "@/components/users-presence";
+import { DynamicSearchInput } from "@/components/dynamic-search-input";
+import { UserRegistrationDialog } from "@/components/user-registration-dialog";
 import type { UserListItem, UserStatus, UserType } from "@/lib/types";
 import { getUsers } from "@/lib/users";
 import { getCurrentUser } from "@/lib/auth";
-import { getUsersPermissionContexts } from "@/lib/access-control";
+import "../people.css";
 import "./users.css";
 
 export const metadata: Metadata = {
@@ -58,50 +64,6 @@ function buildUsersUrl({
   if (page && page > 1) params.set("page", String(page));
   const query = params.toString();
   return query ? `/dashboard/usuarios?${query}` : "/dashboard/usuarios";
-}
-
-function formatLastAccess(value: string | null) {
-  if (!value) return null;
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
-  return {
-    date: new Intl.DateTimeFormat("es-BO", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      timeZone: "America/La_Paz",
-    }).format(date),
-    time: new Intl.DateTimeFormat("es-BO", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hourCycle: "h23",
-      timeZone: "America/La_Paz",
-    }).format(date),
-  };
-}
-
-function UserActivity({ user }: { user: UserListItem }) {
-  const activity = formatLastAccess(
-    user.ultima_actividad_en || user.ultimo_acceso_en,
-  );
-  if (user.en_linea) {
-    return (
-      <span className="user-presence user-presence--online">
-        <strong><i />En línea</strong>
-        <small>Activo ahora</small>
-      </span>
-    );
-  }
-  return (
-    <span className="user-presence user-presence--offline">
-      <strong><i />Desconectado</strong>
-      <small>
-        {activity
-          ? `${activity.date} · ${activity.time} h`
-          : "Sin actividad registrada"}
-      </small>
-    </span>
-  );
 }
 
 function formatBlockedUntil(value: string | null) {
@@ -223,9 +185,12 @@ export default async function UsersPage({ searchParams }: PageProps) {
     currentUser.permisos.includes("permisos.asignar") &&
     currentUser.permisos.includes("roles.leer"),
   );
-  const permissionContexts = canManagePermissions
-    ? await getUsersPermissionContexts(users)
-    : {};
+  const canCreateUsers = Boolean(
+    currentUser?.permisos.includes("usuarios.crear") &&
+    currentUser.permisos.includes("roles.asignar") &&
+    currentUser.permisos.includes("roles.leer") &&
+    currentUser.permisos.includes("pacientes.leer"),
+  );
   const totalPages = Math.max(1, Math.ceil(total / limit));
   const currentPage = Math.min(page, totalPages);
   const firstVisible = total ? (currentPage - 1) * limit + 1 : 0;
@@ -240,14 +205,17 @@ export default async function UsersPage({ searchParams }: PageProps) {
           <h1>Usuarios</h1>
           <p>Consulta las cuentas, roles y estados de acceso de Warmi.</p>
         </div>
-        <div className="users-total">
-          <span className="users-total__icon">
-            <UserSettingsIcon />
-          </span>
-          <span>
-            <small>Resultados</small>
-            <strong>{total}</strong>
-          </span>
+        <div className="users-heading-actions">
+          {canCreateUsers && <UserRegistrationDialog />}
+          <div className="users-total">
+            <span className="users-total__icon">
+              <UserSettingsIcon />
+            </span>
+            <span>
+              <small>Resultados</small>
+              <strong>{total}</strong>
+            </span>
+          </div>
         </div>
       </div>
 
@@ -271,30 +239,30 @@ export default async function UsersPage({ searchParams }: PageProps) {
         <form className="users-search" action="/dashboard/usuarios" method="get">
           <label className="search-control" htmlFor="user-search">
             <SearchIcon />
-            <input
+            <DynamicSearchInput
               id="user-search"
-              name="search"
-              type="search"
-              defaultValue={search}
+              initialValue={search}
               placeholder="Buscar por nombre, correo o usuario..."
-              maxLength={150}
+              basePath="/dashboard/usuarios"
             />
           </label>
           <StatusFilter initialValue={estado} />
           <UserTypeFilter initialValue={tipo} />
-          <button className="filter-button" type="submit">
-            Buscar
-          </button>
-          {(search || estado || tipo) && (
-            <Link className="clear-button" href="/dashboard/usuarios">
-              Limpiar
-            </Link>
-          )}
         </form>
       </div>
 
       {users.length ? (
-        <>
+        <UsersPresenceProvider
+          key={users.map((user) => user.id_usuario).join("-")}
+          initialReferenceTime={new Date().toISOString()}
+          initialUsers={users.map((user) => ({
+            id_usuario: user.id_usuario,
+            en_linea: user.en_linea,
+            ultima_actividad_en:
+              user.ultima_actividad_en || user.ultimo_acceso_en,
+            ultima_desconexion_en: null,
+          }))}
+        >
           <div className="users-table-card">
             <div className="users-table-scroll">
               <table className="users-table">
@@ -331,7 +299,7 @@ export default async function UsersPage({ searchParams }: PageProps) {
                         <span className="role-badge">{user.rol?.nombre || "Sin rol"}</span>
                       </td>
                       <td className="users-col-access">
-                        <UserActivity user={user} />
+                        <UserPresenceStatus userId={user.id_usuario} />
                       </td>
                       <td className="users-col-security">
                         <div className={`security-cell ${hasTemporaryLock(user) ? "security-cell--blocked" : ""}`}>
@@ -368,7 +336,7 @@ export default async function UsersPage({ searchParams }: PageProps) {
                             createdAt={user.created_at}
                             updatedAt={user.updated_at}
                           />}
-                          {canManagePermissions && permissionContexts[user.id_usuario] && <UserPermissionAction userId={user.id_usuario} userName={userName(user) || user.correo_acceso} roleName={user.rol?.nombre || "Sin rol"} context={permissionContexts[user.id_usuario]} />}
+                          {canManagePermissions && <UserPermissionAction userId={user.id_usuario} userName={userName(user) || user.correo_acceso} roleId={user.id_rol} roleName={user.rol?.nombre || "Sin rol"} />}
                           </div>
                         </td>
                       )}
@@ -413,7 +381,7 @@ export default async function UsersPage({ searchParams }: PageProps) {
                   </div>
                   <div className="users-col-access">
                     <dt>Actividad</dt>
-                    <dd><UserActivity user={user} /></dd>
+                    <dd><UserPresenceStatus userId={user.id_usuario} /></dd>
                   </div>
                   <div className="users-col-security">
                     <dt>Seguridad</dt>
@@ -434,7 +402,7 @@ export default async function UsersPage({ searchParams }: PageProps) {
                       createdAt={user.created_at}
                       updatedAt={user.updated_at}
                     />}
-                    {canManagePermissions && permissionContexts[user.id_usuario] && <UserPermissionAction userId={user.id_usuario} userName={userName(user) || user.correo_acceso} roleName={user.rol?.nombre || "Sin rol"} context={permissionContexts[user.id_usuario]} />}
+                    {canManagePermissions && <UserPermissionAction userId={user.id_usuario} userName={userName(user) || user.correo_acceso} roleId={user.id_rol} roleName={user.rol?.nombre || "Sin rol"} />}
                   </div>
                 )}
               </article>
@@ -484,7 +452,7 @@ export default async function UsersPage({ searchParams }: PageProps) {
               </nav>
             )}
           </footer>
-        </>
+        </UsersPresenceProvider>
       ) : (
         <div className="users-message users-message--empty">
           <span className="users-message__icon" aria-hidden="true">

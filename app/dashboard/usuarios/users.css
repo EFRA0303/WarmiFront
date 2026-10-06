@@ -11,6 +11,30 @@
   gap: 28px;
 }
 
+.users-heading-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.user-registration-dialog { width: min(900px, calc(100% - 30px)); }
+.user-registration-state { display: flex; min-height: 220px; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: var(--muted); text-align: center; }
+.user-registration-state strong { color: var(--foreground); font-size: .96rem; }
+.user-registration-state p { margin: 0; }
+.user-registration-spinner { width: 32px; height: 32px; margin-bottom: 4px; border: 3px solid color-mix(in srgb, var(--primary) 22%, transparent); border-top-color: var(--primary); border-radius: 50%; animation: permission-loading-spin .75s linear infinite; }
+.patient-user-search { position: relative; }
+.patient-user-search > input[type="search"] { width: 100%; height: 45px; padding: 0 12px; border: 1px solid var(--border); border-radius: 12px; outline: 0; background: var(--background); color: var(--foreground); font: inherit; font-size: .8rem; }
+.patient-user-search > input[type="search"]:focus { border-color: var(--primary); box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 11%, transparent); }
+.patient-user-search > input[aria-invalid="true"] { border-color: var(--danger); }
+.patient-user-search__options { position: absolute; z-index: 8; top: calc(100% + 7px); right: 0; left: 0; max-height: 230px; overflow-y: auto; padding: 6px; border: 1px solid var(--border); border-radius: 13px; background: var(--surface); box-shadow: 0 18px 45px rgb(3 24 22 / 22%); }
+.patient-user-search__options button { display: flex; width: 100%; flex-direction: column; gap: 3px; padding: 10px 11px; cursor: pointer; border: 0; border-radius: 9px; background: transparent; color: var(--foreground); text-align: left; }
+.patient-user-search__options button:hover,
+.patient-user-search__options button[aria-selected="true"] { background: var(--primary-soft); color: var(--primary-strong); }
+.patient-user-search__options button strong { font-size: .8rem; }
+.patient-user-search__options button small { color: var(--muted); }
+.patient-user-search__options p { margin: 0; padding: 13px 11px; color: var(--muted); text-align: center; }
+
 .page-eyebrow {
   color: var(--primary-strong);
   font-size: 0.68rem;
@@ -1141,10 +1165,15 @@ html.users-hide-actions .users-col-actions {
 
 .user-row-actions { display: flex; align-items: center; gap: 8px; }
 .permission-action-button { border-color: color-mix(in srgb, var(--primary) 30%, var(--border)); background: var(--primary-soft); color: var(--primary-strong); }
-.permission-dialog { width: min(960px, calc(100% - 32px)); }
+.permission-dialog { width: min(1120px, calc(100% - 32px)); }
 .permission-dialog__notice { display: flex; align-items: center; gap: 11px; margin: 16px 20px 0; padding: 12px 14px; border: 1px solid color-mix(in srgb, var(--primary) 25%, var(--border)); border-radius: 13px; background: var(--primary-soft); color: var(--primary-strong); }
 .permission-dialog__notice svg { width: 20px; flex: 0 0 auto; }
 .permission-dialog__notice p { margin: 0; font-size: .85rem; line-height: 1.55; }
+.permission-dialog__loading { display: flex; min-height: 260px; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 28px; color: var(--muted); text-align: center; }
+.permission-dialog__loading > span { width: 32px; height: 32px; margin-bottom: 4px; border: 3px solid color-mix(in srgb, var(--primary) 22%, transparent); border-top-color: var(--primary); border-radius: 50%; animation: permission-loading-spin .75s linear infinite; }
+.permission-dialog__loading strong { color: var(--text); font-size: .98rem; }
+.permission-dialog__loading small { font-size: .84rem; }
+@keyframes permission-loading-spin { to { transform: rotate(360deg); } }
 .permission-dialog__body { display: grid; min-height: 0; overflow-y: auto; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; gap: 12px; padding: 16px 20px 20px; }
 .user-permission-group { overflow: hidden; border: 1px solid var(--border); border-radius: 15px; }
 .user-permission-group > header { display: flex; align-items: center; justify-content: space-between; padding: 10px 13px; background: var(--surface-soft); }
@@ -1152,8 +1181,8 @@ html.users-hide-actions .users-col-actions {
 .user-permission-group > header span { color: var(--muted); font-size: .79rem; }
 .user-permission-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 10px 13px; border-top: 1px solid var(--border); }
 .user-permission-row > div:first-child { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
-.user-permission-row > div:first-child strong { font-size: .93rem; }
-.user-permission-row > div:first-child small { overflow: hidden; color: var(--muted); font-size: .81rem; text-overflow: ellipsis; white-space: nowrap; }
+.user-permission-row > div:first-child strong { overflow-wrap: anywhere; font-size: .93rem; }
+.user-permission-row > div:first-child small { color: var(--muted); font-size: .81rem; line-height: 1.4; overflow-wrap: anywhere; white-space: normal; }
 .user-permission-control { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
 .user-permission-control__source { color: var(--muted); font-size: .77rem; white-space: nowrap; }
 .permission-switch { display: inline-flex; flex: 0 0 auto; padding: 0; border: 0; background: transparent; cursor: pointer; }

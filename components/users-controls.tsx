@@ -7,6 +7,7 @@ import {
   ColumnsIcon,
 } from "@/components/icons";
 import type { UserStatus, UserType } from "@/lib/types";
+import { useCloseDetailsOnOutside } from "@/components/use-close-details-on-outside";
 
 const statusOptions: Array<{ value: "" | UserStatus; label: string }> = [
   { value: "", label: "Todos" },
@@ -36,6 +37,7 @@ export function StatusFilter({ initialValue }: { initialValue?: UserStatus }) {
   const detailsRef = useRef<HTMLDetailsElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const selected = statusOptions.find((option) => option.value === value)!;
+  useCloseDetailsOnOutside(detailsRef);
 
   function selectStatus(nextValue: "" | UserStatus) {
     setValue(nextValue);
@@ -78,6 +80,7 @@ export function UserTypeFilter({ initialValue }: { initialValue?: UserType }) {
   const detailsRef = useRef<HTMLDetailsElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const selected = typeOptions.find((option) => option.value === value)!;
+  useCloseDetailsOnOutside(detailsRef);
 
   function selectType(nextValue: "" | UserType) {
     setValue(nextValue);
@@ -116,12 +119,15 @@ export function UserTypeFilter({ initialValue }: { initialValue?: UserType }) {
 }
 
 export function ColumnSelector({ showActions }: { showActions: boolean }) {
+  const detailsRef = useRef<HTMLDetailsElement>(null);
+  useCloseDetailsOnOutside(detailsRef);
+
   function toggleColumn(key: (typeof columns)[number]["key"], visible: boolean) {
     document.documentElement.classList.toggle(`users-hide-${key}`, !visible);
   }
 
   return (
-    <details className="column-selector">
+    <details ref={detailsRef} className="column-selector">
       <summary className="table-action">
         <ColumnsIcon />
         <span>Columnas</span>

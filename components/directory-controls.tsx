@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { CheckIcon, ChevronRightIcon } from "@/components/icons";
+import { useCloseDetailsOnOutside } from "@/components/use-close-details-on-outside";
 import type { GeneralStatus } from "@/lib/types";
 
 const options: Array<{ value: "" | GeneralStatus; label: string }> = [
@@ -15,6 +16,7 @@ export function GeneralStatusFilter({ initialValue }: { initialValue?: GeneralSt
   const detailsRef = useRef<HTMLDetailsElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const selected = options.find((option) => option.value === value)!;
+  useCloseDetailsOnOutside(detailsRef);
 
   function select(nextValue: "" | GeneralStatus) {
     setValue(nextValue);

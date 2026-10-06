@@ -10,6 +10,7 @@ import type { GeneralStatus, PatientListItem } from "@/lib/types";
 import { PatientRegistrationDialog } from "@/components/registration-dialogs";
 import { PatientEditDialog } from "@/components/people-edit-dialogs";
 import { GeneralStatusControl } from "@/components/general-status-control";
+import { DynamicSearchInput } from "@/components/dynamic-search-input";
 import { changePatientStatus } from "./actions";
 import "../people.css";
 
@@ -84,11 +85,14 @@ export default async function PatientsPage({ searchParams }: PageProps) {
         <form action="/dashboard/pacientes" method="get">
           <label className="directory-search">
             <SearchIcon />
-            <input name="search" type="search" defaultValue={search} placeholder="Buscar por nombre, CI o teléfono..." maxLength={150} />
+            <DynamicSearchInput
+              id="patient-search"
+              initialValue={search}
+              placeholder="Buscar por nombre, usuario, correo, CI o teléfono..."
+              basePath="/dashboard/pacientes"
+            />
           </label>
           <GeneralStatusFilter initialValue={estado} />
-          <button className="directory-filter" type="submit">Buscar</button>
-          {(search || estado) && <Link className="directory-clear" href="/dashboard/pacientes">Limpiar</Link>}
         </form>
       </div>
 
