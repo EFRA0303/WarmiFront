@@ -213,3 +213,75 @@ export type PaginatedResponse<T> = {
   page: number;
   limit: number;
 };
+
+export type AppointmentStatus =
+  | "PROGRAMADA"
+  | "EN_ESPERA"
+  | "ATENDIDA"
+  | "CANCELADA"
+  | "NO_ASISTIO";
+
+export type AppointmentListItem = {
+  id_cita: number;
+  id_paciente: number;
+  id_tratamiento: number | null;
+  id_personal: number;
+  numero_sesion: number | null;
+  fecha_hora_inicio: string;
+  fecha_hora_fin: string;
+  fecha_llegada: string | null;
+  estado: AppointmentStatus;
+  observaciones: string | null;
+  paciente: {
+    id_paciente: number;
+    persona: PersonSummary;
+  };
+  personal: {
+    id_personal: number;
+    profesion: string;
+    cargo: string;
+    color_agenda: string;
+    usuario: {
+      persona: PersonSummary;
+    };
+  };
+  tratamiento: {
+    id_tratamiento: number;
+    id_servicio: number;
+    servicio: {
+      id_servicio: number;
+      nombre: string;
+      duracion_minutos: number;
+    };
+  } | null;
+};
+
+export type AgendaOptions = {
+  patients: Array<{
+    id_paciente: number;
+    nombre: string;
+    ap_paterno: string;
+    ap_materno: string | null;
+    ci: string | null;
+  }>;
+  staff: Array<{
+    id_personal: number;
+    id_usuario: number;
+    foto_perfil_ruta: string | null;
+    nombre: string;
+    ap_paterno: string;
+    ap_materno: string | null;
+    profesion: string;
+    cargo: string;
+    color_agenda: string;
+  }>;
+  treatments: Array<{
+    id_tratamiento: number;
+    id_paciente: number;
+    id_servicio: number;
+    servicio: string;
+    duracion_minutos: number;
+    sesiones_totales: number;
+    estado: "PENDIENTE" | "EN_CURSO";
+  }>;
+};

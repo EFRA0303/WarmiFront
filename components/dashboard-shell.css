@@ -246,6 +246,13 @@ a.nav-item:hover {
   font-size: 0.92rem;
 }
 
+.topbar-title--prominent strong {
+  font-size: clamp(2rem, 4vw, 3.15rem);
+  font-weight: 680;
+  letter-spacing: -0.05em;
+  line-height: 1;
+}
+
 .menu-button {
   display: none;
   width: 42px;
@@ -381,6 +388,14 @@ a.nav-item:hover {
   .topbar-user > span:nth-child(2),
   .topbar-logout span {
     display: none;
+  }
+
+  .topbar-title--prominent > div {
+    display: flex;
+  }
+
+  .topbar-title--prominent strong {
+    font-size: 1.7rem;
   }
 
   .topbar-logout {

@@ -64,7 +64,7 @@ const navigation: Array<{ label: string; items: NavItem[] }> = [
   {
     label: "Operación",
     items: [
-      { label: "Agenda", icon: CalendarIcon },
+      { label: "Agenda", href: "/dashboard/agenda", icon: CalendarIcon, permission: "agenda.leer" },
       { label: "Tratamientos", icon: TreatmentIcon },
       { label: "Inventario", icon: BoxIcon },
       { label: "Ventas", icon: ChartIcon },
@@ -86,6 +86,7 @@ const pageTitles: Record<string, string> = {
   "/dashboard/pacientes/nuevo": "Nuevo paciente",
   "/dashboard/personal": "Gestión del personal",
   "/dashboard/personal/nuevo": "Nuevo empleado",
+  "/dashboard/agenda": "Agenda",
   "/dashboard/sistema/roles-permisos": "Roles y permisos",
 };
 
@@ -185,7 +186,7 @@ export function DashboardShell({
 
       <div className="app-workspace">
         <header className="app-topbar">
-          <div className="topbar-title">
+          <div className={`topbar-title${pathname === "/dashboard/agenda" ? " topbar-title--prominent" : ""}`}>
             <button
               type="button"
               className="menu-button"
@@ -195,7 +196,7 @@ export function DashboardShell({
               <MenuIcon />
             </button>
             <div>
-              <span>Warmi Spa</span>
+              {pathname !== "/dashboard/agenda" && <span>Warmi Spa</span>}
               <strong>{pageTitles[pathname] || "Administración"}</strong>
             </div>
           </div>
