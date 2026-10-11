@@ -1,0 +1,2 @@
+"use client";
+export function InventoryFilter({ name, value, label, options }: { name: string; value?: string; label: string; options: Array<{ value: string; label: string }> }) { return <label className="inventory-filter"><span>{label}</span><select name={name} value={value || ""} onChange={(event) => { event.currentTarget.form?.requestSubmit(); }}><option value="">Todos</option>{options.map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}</select></label>; }

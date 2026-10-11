@@ -1,7 +1,7 @@
 .app-shell {
   display: grid;
   min-height: 100vh;
-  grid-template-columns: 264px minmax(0, 1fr);
+  grid-template-columns: 292px minmax(0, 1fr);
   background: var(--background);
 }
 
@@ -78,62 +78,97 @@
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
 
-.nav-group + .nav-group {
-  margin-top: 21px;
+.nav-branch + .nav-branch {
+  margin-top: 4px;
 }
 
-.nav-group > p {
-  margin: 0 12px 8px;
-  color: rgba(255, 255, 255, 0.48);
-  font-size: 0.62rem;
-  font-weight: 750;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-}
-
-.nav-item {
+.nav-branch__trigger,
+.nav-leaf {
   position: relative;
   display: flex;
+  width: 100%;
   min-height: 44px;
   align-items: center;
   gap: 12px;
   padding: 0 13px;
+  border: 0;
   border-radius: 13px;
+  background: transparent;
   color: rgba(255, 255, 255, 0.76);
+  cursor: pointer;
+  font-family: inherit;
   font-size: 0.8rem;
   font-weight: 600;
+  text-align: left;
   text-decoration: none;
   transition: background 150ms ease, color 150ms ease, transform 150ms ease;
 }
 
-.nav-item + .nav-item {
-  margin-top: 3px;
-}
-
-.nav-item svg {
+.nav-branch__trigger svg,
+.nav-leaf svg {
   width: 19px;
   height: 19px;
   flex: 0 0 auto;
 }
 
-a.nav-item:hover {
+.nav-branch__trigger > span,
+.nav-leaf > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-branch__trigger:hover,
+a.nav-leaf:hover {
   background: rgba(255, 255, 255, 0.09);
   color: #fff;
   transform: translateX(2px);
 }
 
-.nav-item--active {
+.nav-branch--active > .nav-branch__trigger,
+.nav-leaf--active {
   background: rgba(255, 255, 255, 0.16);
   color: #fff;
   box-shadow: inset 3px 0 #99f6e4;
 }
 
-.nav-item--disabled {
+.nav-branch__chevron {
+  width: 14px!important;
+  height: 14px!important;
+  margin-left: auto;
+  transition: transform 160ms ease;
+}
+
+.nav-branch__chevron.expanded {
+  transform: rotate(90deg);
+}
+
+.nav-branch__children {
+  position: relative;
+  margin: 4px 0 7px 22px;
+  padding-left: 12px;
+  border-left: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.nav-branch__children .nav-branch__trigger,
+.nav-branch__children .nav-leaf {
+  min-height: 38px;
+  padding: 0 10px;
+  border-radius: 10px;
+  font-size: 0.72rem;
+}
+
+.nav-branch__children .nav-branch__children {
+  margin-left: 11px;
+}
+
+.nav-leaf--disabled {
   cursor: default;
   opacity: 0.53;
 }
 
-.nav-item small {
+.nav-leaf small {
   margin-left: auto;
   padding: 3px 6px;
   border: 1px solid rgba(255, 255, 255, 0.13);

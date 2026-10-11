@@ -1,0 +1,398 @@
+.sessions-page {
+  max-width: 1680px;
+}
+
+.sessions-table table {
+  min-width: 1120px;
+  table-layout: fixed;
+}
+
+.sessions-table th:nth-child(1) {
+  width: 18%;
+}
+.sessions-table th:nth-child(2) {
+  width: 16%;
+}
+.sessions-table th:nth-child(3) {
+  width: 17%;
+}
+.sessions-table th:nth-child(4) {
+  width: 13%;
+}
+.sessions-table th:nth-child(5) {
+  width: 17%;
+}
+.sessions-table th:nth-child(6) {
+  width: 10%;
+}
+.sessions-table th:nth-child(7) {
+  width: 125px;
+}
+
+.session-professional {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.8rem;
+  font-weight: 750;
+}
+
+.session-professional i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--session-color);
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--session-color) 16%, transparent);
+}
+
+.session-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 9px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.session-status i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.session-status--en_curso {
+  background: color-mix(in srgb, #38bdf8 15%, transparent);
+  color: #1683ad;
+}
+
+.session-status--finalizada {
+  background: color-mix(in srgb, #34d399 15%, transparent);
+  color: #11805c;
+}
+
+.session-status--cancelada {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.session-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.session-actions button {
+  display: grid;
+  width: 35px;
+  height: 35px;
+  cursor: pointer;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-soft);
+  color: var(--primary-strong);
+}
+
+.session-actions button:hover,
+.session-actions button:focus-visible {
+  border-color: currentColor;
+  background: var(--primary-soft);
+}
+
+.session-actions button.finish {
+  color: #15916c;
+}
+.session-actions button.cancel {
+  color: var(--danger);
+}
+.session-actions svg {
+  width: 15px;
+}
+
+.session-dialog {
+  position: fixed;
+  inset: 0;
+  width: min(760px, calc(100% - 28px));
+  max-width: none;
+  max-height: calc(100dvh - 28px);
+  margin: auto;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: var(--surface);
+  color: var(--foreground);
+  box-shadow: 0 30px 90px rgba(3, 24, 22, 0.34);
+}
+
+.session-dialog::backdrop {
+  background: rgba(3, 24, 22, 0.64);
+  backdrop-filter: blur(5px);
+}
+
+.session-dialog > section {
+  max-height: calc(100dvh - 30px);
+  overflow-y: auto;
+  padding: 23px;
+}
+
+.session-dialog header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 13px;
+  padding-bottom: 17px;
+  border-bottom: 1px solid var(--border);
+}
+
+.session-dialog header > span {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--primary-soft);
+  color: var(--primary-strong);
+}
+
+.session-dialog header > span svg {
+  width: 20px;
+}
+
+.session-dialog header h2 {
+  margin: 4px 0;
+  font-size: 1.18rem;
+}
+
+.session-dialog header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.session-dialog header > button {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  cursor: pointer;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--background);
+  color: var(--muted);
+}
+
+.session-dialog header > button svg {
+  width: 15px;
+}
+.session-form {
+  padding-top: 18px;
+}
+
+.session-mode {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 15px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--background);
+}
+
+.session-mode button {
+  flex: 1;
+  min-height: 38px;
+  cursor: pointer;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.session-mode button.active {
+  background: var(--primary-soft);
+  color: var(--primary-strong);
+}
+
+.session-mode button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.session-setup-alert {
+  margin: 0 0 15px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, #eab72f 45%, var(--border));
+  border-radius: 12px;
+  background: color-mix(in srgb, #eab72f 12%, transparent);
+  color: color-mix(in srgb, #eab72f 72%, var(--foreground));
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.session-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.session-grid label {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.session-grid label > span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 780;
+}
+
+.session-grid input,
+.session-grid select,
+.session-grid textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  outline: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font: inherit;
+  font-size: 0.84rem;
+}
+
+.session-grid input,
+.session-grid select {
+  height: 44px;
+  padding: 0 11px;
+}
+
+.session-grid textarea {
+  padding: 11px;
+  resize: vertical;
+}
+
+.session-grid input:focus,
+.session-grid select:focus,
+.session-grid textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 10%, transparent);
+}
+
+.session-wide {
+  grid-column: 1 / -1;
+}
+.session-error {
+  color: var(--danger);
+  font-size: 0.72rem;
+}
+
+.session-appointment {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--primary-soft);
+}
+
+.session-appointment strong {
+  font-size: 0.88rem;
+}
+.session-appointment span {
+  font-size: 0.8rem;
+}
+.session-appointment small {
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+
+.session-form footer,
+.session-confirm footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.session-form footer > button:first-child,
+.session-confirm footer > button:first-child {
+  min-height: 41px;
+  cursor: pointer;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--background);
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.session-confirm {
+  padding-top: 18px;
+}
+
+.session-confirm p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.6;
+}
+
+.session-confirm strong {
+  color: var(--foreground);
+}
+
+.session-confirm footer button.finish,
+.session-confirm footer button.danger {
+  min-height: 41px;
+  cursor: pointer;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 11px;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.session-confirm footer button.finish {
+  background: #15916c;
+}
+.session-confirm footer button.danger {
+  background: var(--danger);
+}
+
+@media (max-width: 800px) {
+  .sessions-table {
+    display: none;
+  }
+}
+
+@media (max-width: 620px) {
+  .session-grid {
+    grid-template-columns: 1fr;
+  }
+  .session-wide {
+    grid-column: auto;
+  }
+  .session-dialog {
+    width: calc(100% - 16px);
+  }
+
+  .session-form footer,
+  .session-confirm footer {
+    flex-direction: column-reverse;
+  }
+
+  .session-form footer button,
+  .session-confirm footer button {
+    width: 100%;
+  }
+}

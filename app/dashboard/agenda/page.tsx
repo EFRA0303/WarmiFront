@@ -71,6 +71,8 @@ export default async function AgendaPage({ searchParams }: PageProps) {
   const estado = rawStatus && statuses.has(rawStatus) ? rawStatus : undefined;
   const rawStaff = Number(one(params.id_personal));
   const idPersonal = Number.isInteger(rawStaff) && rawStaff > 0 ? rawStaff : undefined;
+  const rawTreatment = Number(one(params.id_tratamiento));
+  const requestedTreatmentId = Number.isInteger(rawTreatment) && rawTreatment > 0 ? rawTreatment : undefined;
 
   const [appointmentsResult, optionsResult, currentUser] = await Promise.all([
     getAppointments({
@@ -99,6 +101,9 @@ export default async function AgendaPage({ searchParams }: PageProps) {
   }
 
   const canCreate = currentUser.permisos.includes("agenda.crear");
+  const defaultTreatmentId = requestedTreatmentId && optionsResult.value.treatments.some((item) => item.id_tratamiento === requestedTreatmentId)
+    ? requestedTreatmentId
+    : undefined;
 
   return (
     <section className="directory-page agenda-page">
@@ -110,6 +115,7 @@ export default async function AgendaPage({ searchParams }: PageProps) {
         initialStatus={estado}
         initialStaff={idPersonal}
         initialMode={initialView}
+        defaultTreatmentId={defaultTreatmentId}
         canCreate={canCreate}
         canEdit={currentUser.permisos.includes("agenda.actualizar")}
       />

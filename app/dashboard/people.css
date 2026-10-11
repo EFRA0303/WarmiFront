@@ -315,6 +315,13 @@
 .directory-edit > span { display: none; }
 .directory-card-actions { display: flex; justify-content: flex-end; margin-top: 15px; padding-top: 14px; border-top: 1px solid var(--border); }
 .patient-row-actions { display: flex; align-items: center; gap: 6px; }
+.patient-row-actions > a,
+.patient-row-actions > button { display: grid; width: 40px; height: 40px; flex: 0 0 auto; place-items: center; border: 1px solid color-mix(in srgb, var(--primary) 26%, var(--border)); border-radius: 10px; background: var(--surface-soft); color: var(--primary-strong); cursor: pointer; }
+.patient-row-actions > a:hover,
+.patient-row-actions > button:not(:disabled):hover { border-color: var(--primary); background: var(--primary-soft); }
+.patient-row-actions > a svg,
+.patient-row-actions > button svg { width: 17px; }
+.patient-history-error { position: absolute; z-index: 2; width: 190px; margin-top: 72px; padding: 7px; border-radius: 8px; background: var(--danger-soft); color: var(--danger); font-size: .66rem; }
 .directory-action-placeholder { display: grid; width: 40px; height: 40px; flex: 0 0 auto; place-items: center; border: 1px solid color-mix(in srgb, var(--primary) 26%, var(--border)); border-radius: 10px; background: var(--surface-soft); color: var(--primary-strong); }
 .directory-action-placeholder svg { width: 17px; }
 .directory-action-placeholder--add { border-color: color-mix(in srgb, var(--primary) 38%, var(--border)); background: var(--primary-soft); color: var(--primary-strong); }

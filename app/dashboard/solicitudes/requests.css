@@ -1,0 +1,15 @@
+.requests-page { max-width: 1680px; }
+.requests-table table { min-width: 1200px; table-layout: fixed; }
+.requests-table th:nth-child(1) { width: 17%; } .requests-table th:nth-child(2) { width: 17%; }
+.requests-table th:nth-child(3) { width: 14%; } .requests-table th:nth-child(4) { width: 19%; }
+.requests-table th:nth-child(5) { width: 15%; } .requests-table th:nth-child(6) { width: 10%; }
+.requests-table th:nth-child(7) { width: 120px; }
+.request-reason { display: -webkit-box; overflow: hidden; margin: 0; color: var(--muted); font-size: .78rem; line-height: 1.45; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.request-status { display: inline-flex; align-items: center; gap: 7px; padding: 6px 9px; border-radius: 999px; font-size: .76rem; font-weight: 820; white-space: nowrap; }
+.request-status i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.request-status--pendiente { color: #aa7613; background: color-mix(in srgb, #eab72f 16%, transparent); }
+.request-status--valorado { color: #7a5bd0; background: color-mix(in srgb, #8b6be8 15%, transparent); }
+.request-status--aceptado { color: #11805c; background: color-mix(in srgb, #34d399 15%, transparent); }
+.request-status--descartado { color: var(--danger); background: var(--danger-soft); }
+.request-dialog--wide { width: min(820px, calc(100% - 28px)); }
+@media (max-width: 800px) { .requests-table { display: none; } }

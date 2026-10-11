@@ -121,16 +121,22 @@ function AppointmentFields({
   state,
   appointment,
   defaultDate,
+  defaultTreatmentId,
 }: {
   options: AgendaOptions;
   state: RegistrationState;
   appointment?: AppointmentListItem;
   defaultDate?: string;
+  defaultTreatmentId?: number;
 }) {
-  const initialPatient = String(appointment?.id_paciente ?? "");
+  const defaultTreatment = options.treatments.find((item) => item.id_tratamiento === defaultTreatmentId);
+  const initialPatient = String(appointment?.id_paciente ?? defaultTreatment?.id_paciente ?? "");
   const [patientId, setPatientId] = useState(initialPatient);
   const [treatmentId, setTreatmentId] = useState(
-    String(appointment?.id_tratamiento ?? ""),
+    String(appointment?.id_tratamiento ?? defaultTreatment?.id_tratamiento ?? ""),
+  );
+  const [sessionNumber, setSessionNumber] = useState(
+    String(appointment?.numero_sesion ?? defaultTreatment?.siguiente_sesion ?? ""),
   );
   const initialStart = appointment
     ? localDateTime(appointment.fecha_hora_inicio)
@@ -140,7 +146,11 @@ function AppointmentFields({
   const initialEnd = appointment
     ? localDateTime(appointment.fecha_hora_fin)
     : defaultDate
-      ? `${defaultDate}T10:00`
+      ? (() => {
+          const start = new Date(`${defaultDate}T09:00:00-04:00`);
+          start.setMinutes(start.getMinutes() + (defaultTreatment?.duracion_minutos ?? 60));
+          return localDateTime(start.toISOString());
+        })()
       : "";
   const [start, setStart] = useState(initialStart);
   const [end, setEnd] = useState(initialEnd);
@@ -173,6 +183,7 @@ function AppointmentFields({
           onChange={(event) => {
             setPatientId(event.target.value);
             setTreatmentId("");
+            setSessionNumber("");
           }}
         >
           <option value="">Seleccionar paciente</option>
@@ -203,6 +214,10 @@ function AppointmentFields({
           value={treatmentId}
           onChange={(event) => {
             setTreatmentId(event.target.value);
+            const treatment = options.treatments.find(
+              (item) => item.id_tratamiento === Number(event.target.value),
+            );
+            setSessionNumber(treatment ? String(treatment.siguiente_sesion) : "");
             calculateEnd(start, event.target.value);
           }}
         >
@@ -220,7 +235,8 @@ function AppointmentFields({
           name="numero_sesion"
           type="number"
           min="1"
-          defaultValue={appointment?.numero_sesion ?? ""}
+          value={sessionNumber}
+          onChange={(event) => setSessionNumber(event.target.value)}
           disabled={!treatmentId}
           required={Boolean(treatmentId)}
         />
@@ -270,11 +286,13 @@ function AppointmentForm({
   options,
   appointment,
   defaultDate,
+  defaultTreatmentId,
   onClose,
 }: {
   options: AgendaOptions;
   appointment?: AppointmentListItem;
   defaultDate?: string;
+  defaultTreatmentId?: number;
   onClose: () => void;
 }) {
   const action = appointment
@@ -289,6 +307,7 @@ function AppointmentForm({
           state={state}
           appointment={appointment}
           defaultDate={defaultDate}
+          defaultTreatmentId={defaultTreatmentId}
         />
         <footer>
           <button type="button" className="agenda-secondary" onClick={onClose}>Cancelar</button>
@@ -305,11 +324,15 @@ function AppointmentForm({
 export function NewAppointmentDialog({
   options,
   defaultDate,
+  defaultTreatmentId,
+  autoOpen = false,
 }: {
   options: AgendaOptions;
   defaultDate: string;
+  defaultTreatmentId?: number;
+  autoOpen?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(autoOpen);
   const [formKey, setFormKey] = useState(0);
   const close = () => {
     setOpen(false);
@@ -321,7 +344,7 @@ export function NewAppointmentDialog({
         <PlusIcon />Nueva cita
       </button>
       <DialogFrame open={open} onClose={close} eyebrow="NUEVA CITA" title="Programar cita" description="Selecciona paciente, profesional y horario disponible.">
-        <AppointmentForm key={formKey} options={options} defaultDate={defaultDate} onClose={close} />
+        <AppointmentForm key={formKey} options={options} defaultDate={defaultDate} defaultTreatmentId={defaultTreatmentId} onClose={close} />
       </DialogFrame>
     </>
   );

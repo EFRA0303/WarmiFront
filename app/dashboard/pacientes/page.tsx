@@ -4,7 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { FaWhatsapp } from "react-icons/fa";
 import { GeneralStatusFilter } from "@/components/directory-controls";
-import { ChevronLeftIcon, ChevronRightIcon, HistoryIcon, PlusIcon, SearchIcon } from "@/components/icons";
+import { ChevronLeftIcon, ChevronRightIcon, PlusIcon, SearchIcon } from "@/components/icons";
 import { getCurrentUser } from "@/lib/auth";
 import { getPatients } from "@/lib/people";
 import type { GeneralStatus, PatientListItem } from "@/lib/types";
@@ -14,6 +14,7 @@ import { GeneralStatusControl } from "@/components/general-status-control";
 import { DynamicSearchInput } from "@/components/dynamic-search-input";
 import { DirectoryTableActions } from "@/components/directory-table-actions";
 import { changePatientStatus } from "./actions";
+import { PatientHistoryAction } from "@/components/patient-history-action";
 import "../people.css";
 
 export const metadata: Metadata = { title: "Pacientes" };
@@ -51,9 +52,9 @@ function birthDate(value: string | null) {
   return new Intl.DateTimeFormat("es-BO", { day: "2-digit", month: "short", year: "numeric" }).format(parsed);
 }
 
-function PatientActions({ patient }: { patient: PatientListItem }) {
+function PatientActions({ patient, canEdit, canViewHistory, canCreateHistory }: { patient: PatientListItem; canEdit: boolean; canViewHistory: boolean; canCreateHistory: boolean }) {
   const name = fullName(patient);
-  return <div className="patient-row-actions"><PatientEditDialog patient={patient} /><button type="button" className="directory-action-placeholder directory-action-placeholder--add" title="Nueva atención: disponible próximamente" aria-label={`Nueva atención para ${name} próximamente`} disabled><PlusIcon /></button><button type="button" className="directory-action-placeholder" title="Historial clínico: disponible próximamente" aria-label={`Historial clínico de ${name} próximamente`} disabled><HistoryIcon /></button></div>;
+  return <div className="patient-row-actions">{canEdit && <PatientEditDialog patient={patient} />}{canEdit && <button type="button" className="directory-action-placeholder directory-action-placeholder--add" title="Nueva atención: disponible próximamente" aria-label={`Nueva atención para ${name} próximamente`} disabled><PlusIcon /></button>}{canViewHistory && <PatientHistoryAction patientId={patient.id_paciente} historyId={patient.historial?.id_historial} patientName={name} canCreate={canCreateHistory} />}</div>;
 }
 
 function url(page: number, search: string, estado?: GeneralStatus) {
@@ -86,6 +87,9 @@ export default async function PatientsPage({ searchParams }: PageProps) {
   );
   const canChangeStatus = Boolean(currentUser?.permisos.includes("pacientes.actualizar"));
   const canChangeUserStatus = Boolean(currentUser?.permisos.includes("usuarios.actualizar"));
+  const canViewHistory = Boolean(currentUser?.permisos.includes("historiales.leer"));
+  const canCreateHistory = Boolean(currentUser?.permisos.includes("historiales.crear"));
+  const showActions = canEdit || canViewHistory;
 
   if (!result.ok) return <DirectoryError title="pacientes" message={result.message} forbidden={result.status === 403} />;
 
@@ -106,7 +110,7 @@ export default async function PatientsPage({ searchParams }: PageProps) {
 
       {one(params.creado) === "1" && <div className="directory-success">Paciente registrado correctamente.</div>}
 
-      <DirectoryTableActions scope="patients" fileName="pacientes-warmi" columns={patientColumns} showActions={canEdit} />
+      <DirectoryTableActions scope="patients" fileName="pacientes-warmi" columns={patientColumns} showActions={showActions} />
 
       <div className="directory-toolbar">
         <form action="/dashboard/pacientes" method="get">
@@ -128,7 +132,7 @@ export default async function PatientsPage({ searchParams }: PageProps) {
           <div className="directory-table-card">
             <div className="directory-table-scroll">
               <table className="directory-table directory-table--patients">
-                <thead><tr><th data-directory-column="patient">Paciente</th><th data-directory-column="document">CI</th><th data-directory-column="occupation">Ocupación</th><th data-directory-column="contact">Contacto</th><th data-directory-column="email">Correo</th><th data-directory-column="birth">Fecha de nacimiento</th><th data-directory-column="gender">Género</th><th data-directory-column="status">Estado</th>{canEdit && <th data-directory-column="actions">Acciones</th>}</tr></thead>
+                <thead><tr><th data-directory-column="patient">Paciente</th><th data-directory-column="document">CI</th><th data-directory-column="occupation">Ocupación</th><th data-directory-column="contact">Contacto</th><th data-directory-column="email">Correo</th><th data-directory-column="birth">Fecha de nacimiento</th><th data-directory-column="gender">Género</th><th data-directory-column="status">Estado</th>{showActions && <th data-directory-column="actions">Acciones</th>}</tr></thead>
                 <tbody>{data.map((patient) => (
                   <tr key={patient.id_paciente}>
                     <td data-directory-column="patient"><div className="directory-person">{patient.persona.usuario?.foto_perfil_ruta ? <span className="directory-person__photo"><Image src={`/api/users/${patient.persona.usuario.id_usuario}/profile-photo`} alt="" width={40} height={40} unoptimized /></span> : <span>{initials(patient) || "WP"}</span>}<div><strong>{fullName(patient)}</strong><small>Paciente #{patient.id_paciente}</small></div></div></td>
@@ -139,7 +143,7 @@ export default async function PatientsPage({ searchParams }: PageProps) {
                     <td data-directory-column="birth"><span className="directory-main-value">{birthDate(patient.persona.fecha_nac)}</span></td>
                     <td data-directory-column="gender"><span className="directory-main-value">{patient.persona.genero === "FEMENINO" ? "Femenino" : "Masculino"}</span></td>
                     <td data-directory-column="status">{canChangeStatus ? <GeneralStatusControl id={patient.id_paciente} name={fullName(patient)} status={patient.estado} reason={patient.motivo_baja} accessPolicy={patient.persona.usuario && canChangeUserStatus ? "optional" : "none"} action={changePatientStatus} /> : <StatusBadge status={patient.estado} />}</td>
-                    {canEdit && <td data-directory-column="actions"><PatientActions patient={patient} /></td>}
+                    {showActions && <td data-directory-column="actions"><PatientActions patient={patient} canEdit={canEdit} canViewHistory={canViewHistory} canCreateHistory={canCreateHistory} /></td>}
                   </tr>
                 ))}</tbody>
               </table>
@@ -149,7 +153,7 @@ export default async function PatientsPage({ searchParams }: PageProps) {
             <article className="directory-mobile-card" key={patient.id_paciente}>
               <div className="directory-card-head"><div className="directory-person">{patient.persona.usuario?.foto_perfil_ruta ? <span className="directory-person__photo"><Image src={`/api/users/${patient.persona.usuario.id_usuario}/profile-photo`} alt="" width={40} height={40} unoptimized /></span> : <span>{initials(patient) || "WP"}</span>}<div><strong>{fullName(patient)}</strong><small>{patient.persona.ci || `Paciente #${patient.id_paciente}`}</small></div></div>{canChangeStatus ? <GeneralStatusControl id={patient.id_paciente} name={fullName(patient)} status={patient.estado} reason={patient.motivo_baja} accessPolicy={patient.persona.usuario && canChangeUserStatus ? "optional" : "none"} action={changePatientStatus} /> : <StatusBadge status={patient.estado} />}</div>
               <dl><div><dt>Ocupación</dt><dd>{patient.ocupacion || "Sin registrar"}</dd></div><div><dt>Contacto</dt><dd className="patient-whatsapp-phone"><FaWhatsapp aria-hidden="true" />{patient.persona.telefono1}</dd></div><div><dt>Correo</dt><dd>{patient.persona.usuario?.correo_acceso || "Sin cuenta"}</dd></div><div><dt>Nacimiento</dt><dd>{birthDate(patient.persona.fecha_nac)}</dd></div><div><dt>Género</dt><dd>{patient.persona.genero === "FEMENINO" ? "Femenino" : "Masculino"}</dd></div></dl>
-              {canEdit && <div className="directory-card-actions"><PatientActions patient={patient} /></div>}
+              {showActions && <div className="directory-card-actions"><PatientActions patient={patient} canEdit={canEdit} canViewHistory={canViewHistory} canCreateHistory={canCreateHistory} /></div>}
             </article>
           ))}</div>
           <DirectoryFooter current={current} pages={pages} total={total} limit={limit} search={search} estado={estado} />

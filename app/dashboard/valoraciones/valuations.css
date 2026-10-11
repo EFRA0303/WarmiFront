@@ -1,0 +1,29 @@
+.valuations-page { max-width: 1680px; }
+.valuations-table table { min-width: 1180px; table-layout: fixed; }
+.valuations-table th:nth-child(1) { width: 17%; }
+.valuations-table th:nth-child(2) { width: 10%; }
+.valuations-table th:nth-child(3) { width: 17%; }
+.valuations-table th:nth-child(4) { width: 16%; }
+.valuations-table th:nth-child(5) { width: 14%; }
+.valuations-table th:nth-child(6) { width: 18%; }
+.valuations-table th:nth-child(7) { width: 100px; }
+.valuation-type { display: inline-flex; padding: 6px 10px; border-radius: 999px; font-size: .76rem; font-weight: 850; }
+.valuation-type--inicial { color: #1683ad; background: color-mix(in srgb, #38bdf8 15%, transparent); }
+.valuation-type--evolucion { color: #7a5bd0; background: color-mix(in srgb, #8b6be8 15%, transparent); }
+.valuation-type--final { color: #11805c; background: color-mix(in srgb, #34d399 15%, transparent); }
+.valuation-measures { display: flex; flex-wrap: wrap; gap: 5px; }
+.valuation-measures span { display: inline-flex; align-items: baseline; gap: 3px; padding: 5px 7px; border: 1px solid var(--border); border-radius: 8px; background: var(--background); font-size: .72rem; }
+.valuation-measures small { color: var(--muted); }
+.valuation-measures em { padding: 5px; color: var(--primary-strong); font-size: .72rem; font-style: normal; font-weight: 800; }
+.valuation-empty { color: var(--muted); font-size: .77rem; }
+.valuation-dialog--wide { width: min(900px, calc(100% - 28px)); }
+.valuation-measure-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 13px; }
+.valuation-measure-grid label { display: flex; min-width: 0; flex-direction: column; gap: 7px; }
+.valuation-measure-grid label > span { color: var(--muted); font-size: .77rem; font-weight: 780; }
+.valuation-measure-grid label > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; overflow: hidden; border: 1px solid var(--border); border-radius: 12px; background: var(--background); }
+.valuation-measure-grid input { width: 100%; height: 44px; padding: 0 11px; border: 0; outline: 0; background: transparent; color: var(--foreground); font: inherit; }
+.valuation-measure-grid label > div:focus-within { border-color: var(--primary); box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 10%, transparent); }
+.valuation-measure-grid label > div b { display: flex; align-items: center; padding: 0 11px; border-left: 1px solid var(--border); color: var(--muted); font-size: .72rem; }
+.valuation-actions button.finish svg { width: 17px; }
+@media (max-width: 800px) { .valuations-table { display: none; } .valuation-measure-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .valuation-measure-grid { grid-template-columns: 1fr; } }

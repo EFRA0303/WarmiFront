@@ -1,0 +1,21 @@
+.promotions-page { max-width: 1760px; }
+.promotions-table table { min-width: 1370px; table-layout: fixed; }
+.promotions-table th:nth-child(1) { width: 18%; }
+.promotions-table th:nth-child(2) { width: 10%; }
+.promotions-table th:nth-child(3) { width: 20%; }
+.promotions-table th:nth-child(4) { width: 23%; }
+.promotions-table th:nth-child(5) { width: 11%; }
+.promotions-table th:nth-child(6) { width: 10%; }
+.promotions-table th:nth-child(7) { width: 150px; }
+.promotion-discount { display: block; color: var(--primary-strong); font-size: .9rem; }
+.promotion-type { color: var(--muted); font-size: .65rem; }
+.promotion-validity { display: grid; gap: 5px; }
+.promotion-validity span { display: grid; grid-template-columns: 42px 1fr; gap: 5px; color: var(--muted); font-size: .67rem; }
+.promotion-validity b { color: var(--foreground); font-size: .61rem; text-transform: uppercase; }
+.promotion-status { display: inline-flex; align-items: center; gap: 7px; padding: 7px 10px; border-radius: 999px; font-size: .68rem; font-weight: 800; white-space: nowrap; }
+.promotion-status > span { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.promotion-status--programada { background: color-mix(in srgb, #f4b740 15%, transparent); color: #c78700; }
+.promotion-status--activa { background: var(--primary-soft); color: var(--primary-strong); }
+.promotion-status--finalizada { background: color-mix(in srgb, #5799d7 15%, transparent); color: #3479b8; }
+.promotion-status--cancelada { background: var(--danger-soft); color: var(--danger); }
+@media (max-width: 800px) { .promotions-table { display: none; } }

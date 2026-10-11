@@ -1,0 +1,194 @@
+"use server";
+import { randomUUID } from "node:crypto";
+import { revalidatePath } from "next/cache";
+import { getSessionToken } from "@/lib/auth";
+import { backendUrl, readApiMessage } from "@/lib/backend";
+import type { AcquisitionStatus, RegistrationState } from "@/lib/types";
+const text = (d: FormData, n: string) => {
+  const v = d.get(n);
+  return typeof v === "string" ? v.trim() : "";
+};
+const fail = (message: string): RegistrationState => ({
+  resultId: randomUUID(),
+  outcome: "error",
+  title: "No se pudo completar",
+  message,
+});
+const done = (title: string, message: string): RegistrationState => ({
+  resultId: randomUUID(),
+  outcome: "success",
+  title,
+  message,
+});
+async function mutate(path: string, method: "POST" | "PATCH", body: object) {
+  const token = await getSessionToken();
+  if (!token) return fail("La sesión venció.");
+  try {
+    const r = await fetch(backendUrl(path), {
+      method,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+      cache: "no-store",
+    });
+    if (!r.ok)
+      return fail(
+        (await readApiMessage(r)) || "La operación no pudo completarse.",
+      );
+  } catch {
+    return fail("No pudimos conectar con el servidor.");
+  }
+  revalidatePath("/dashboard", "layout");
+  return null;
+}
+const num = (v: string) => /^\d+(?:\.\d{1,2})?$/.test(v.replace(",", "."));
+const iso = (v: string) =>
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(v)
+    ? new Date(`${v}:00-04:00`).toISOString()
+    : null;
+export async function createAcquisition(
+  _s: RegistrationState,
+  d: FormData,
+): Promise<RegistrationState> {
+  const patient = Number(text(d, "id_paciente")),
+    offer = text(d, "offer");
+  const [type, rawId] = offer.split(":");
+  const id = Number(rawId),
+    date = iso(text(d, "fecha_adquisicion"));
+  const count = Number(text(d, "service_count"));
+  const errors: Record<string, string> = {};
+  if (!Number.isInteger(patient) || patient < 1)
+    errors.id_paciente = "Selecciona un paciente.";
+  if (!new Set(["PAQUETE", "PROMOCION"]).has(type) || !Number.isInteger(id))
+    errors.offer = "Selecciona un paquete o promoción.";
+  if (!date) errors.fecha_adquisicion = "Selecciona la fecha.";
+  const detalles = [];
+  for (let i = 0; i < count; i++) {
+    const sid = Number(text(d, `service_id_${i}`)),
+      sessions = Number(text(d, `sessions_${i}`)),
+      price = text(d, `price_${i}`).replace(",", ".");
+    if (!num(price)) errors[`price_${i}`] = "Ingresa un precio válido.";
+    detalles.push({
+      id_servicio: sid,
+      sesiones_incluidas: sessions,
+      precio_unitario: price,
+      descuento: "0",
+    });
+  }
+  if (!detalles.length)
+    errors.offer = "La oferta no tiene servicios configurados.";
+  if (Object.keys(errors).length) return { fieldErrors: errors };
+  const body = {
+    id_paciente: patient,
+    id_paquete: type === "PAQUETE" ? id : undefined,
+    id_promocion: type === "PROMOCION" ? id : undefined,
+    fecha_adquisicion: date,
+    detalles,
+  };
+  const r = await mutate("/adquisiciones", "POST", body);
+  return (
+    r ??
+    done(
+      "Adquisición registrada",
+      "Las sesiones ya están disponibles para el paciente.",
+    )
+  );
+}
+export async function changeAcquisition(
+  id: number,
+  estado: AcquisitionStatus,
+): Promise<RegistrationState> {
+  const r = await mutate(`/adquisiciones/${id}`, "PATCH", { estado });
+  return (
+    r ??
+    done(
+      estado === "COMPLETADA"
+        ? "Adquisición completada"
+        : "Adquisición cancelada",
+      "El historial se conservó.",
+    )
+  );
+}
+export async function createConsumption(
+  _s: RegistrationState,
+  d: FormData,
+): Promise<RegistrationState> {
+  return stockOperation(
+    "/inventario/consumos-sesion",
+    "id_sesion",
+    d,
+    "Consumo registrado",
+  );
+}
+export async function createSaleOutput(
+  _s: RegistrationState,
+  d: FormData,
+): Promise<RegistrationState> {
+  return stockOperation(
+    "/inventario/salidas-venta",
+    "id_detalle",
+    d,
+    "Salida registrada",
+  );
+}
+async function stockOperation(
+  path: string,
+  key: "id_sesion" | "id_detalle",
+  d: FormData,
+  title: string,
+): Promise<RegistrationState> {
+  const ref = Number(text(d, key)),
+    lot = Number(text(d, "id_lote")),
+    quantity = text(d, "cantidad").replace(",", ".");
+  const errors: Record<string, string> = {};
+  if (!Number.isInteger(ref) || ref < 1)
+    errors[key] = "Selecciona el registro.";
+  if (!Number.isInteger(lot) || lot < 1) errors.id_lote = "Selecciona un lote.";
+  if (!num(quantity) || Number(quantity) <= 0)
+    errors.cantidad = "Ingresa una cantidad mayor a cero.";
+  if (Object.keys(errors).length) return { fieldErrors: errors };
+  const r = await mutate(path, "POST", {
+    [key]: ref,
+    id_lote: lot,
+    cantidad: quantity,
+    observaciones: text(d, "observaciones") || undefined,
+  });
+  return r ?? done(title, "El stock del lote fue actualizado.");
+}
+export async function saveCompany(
+  id: number | null,
+  _s: RegistrationState,
+  d: FormData,
+): Promise<RegistrationState> {
+  const name = text(d, "nombre_comercial");
+  if (!name)
+    return {
+      fieldErrors: { nombre_comercial: "Ingresa el nombre comercial." },
+    };
+  const body = {
+    nombre_comercial: name,
+    razon_social: text(d, "razon_social") || undefined,
+    telefono1: text(d, "telefono1") || undefined,
+    telefono2: text(d, "telefono2") || undefined,
+    correo: text(d, "correo") || undefined,
+    direccion: text(d, "direccion") || undefined,
+    sitio_web: text(d, "sitio_web") || undefined,
+    logo_url: text(d, "logo_url") || undefined,
+    moneda: text(d, "moneda") || "BOB",
+    estado: text(d, "estado") || "ACTIVO",
+  };
+  const r = await mutate(
+    id ? `/empresa/${id}` : "/empresa",
+    id ? "PATCH" : "POST",
+    body,
+  );
+  return (
+    r ??
+    done(
+      id ? "Empresa actualizada" : "Empresa registrada",
+      "La información comercial fue guardada.",
+    )
+  );
+}

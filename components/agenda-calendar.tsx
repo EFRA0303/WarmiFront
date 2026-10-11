@@ -299,6 +299,7 @@ export function AgendaCalendar({
   initialStatus,
   initialStaff,
   initialMode,
+  defaultTreatmentId,
   canCreate,
   canEdit,
 }: {
@@ -308,6 +309,7 @@ export function AgendaCalendar({
   initialStatus?: AppointmentStatus;
   initialStaff?: number;
   initialMode: ViewMode;
+  defaultTreatmentId?: number;
   canCreate: boolean;
   canEdit: boolean;
 }) {
@@ -400,6 +402,8 @@ export function AgendaCalendar({
             key={selectedDate}
             options={options}
             defaultDate={selectedDate}
+            defaultTreatmentId={defaultTreatmentId}
+            autoOpen={Boolean(defaultTreatmentId)}
           />
         )}
       </div>
