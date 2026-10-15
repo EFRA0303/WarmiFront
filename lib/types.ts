@@ -292,6 +292,62 @@ export type AgendaOptions = {
     siguiente_sesion: number;
     estado: "PENDIENTE" | "EN_CURSO";
   }>;
+  staffSchedules: Array<{
+    id_horario: number;
+    id_personal: number;
+    dia_semana: Weekday;
+    hora_inicio: string;
+    hora_fin: string;
+    motivo_pausa_anterior: string | null;
+  }>;
+  staffExtraSchedules: Array<{
+    id_horario_extra: number;
+    id_personal: number;
+    fecha: string;
+    hora_inicio: string;
+    hora_fin: string;
+    motivo: string | null;
+  }>;
+  staffBlocks: Array<{
+    id_bloqueo: number;
+    id_personal: number;
+    fecha_hora_inicio: string;
+    fecha_hora_fin: string;
+    motivo: string | null;
+  }>;
+  businessHours: BusinessHours;
+};
+
+export type BusinessHours = {
+  id_configuracion_horario?: number;
+  id_empresa?: number;
+  intervalo_minutos: number;
+  horarios_semanales: Array<{
+    id_horario_atencion?: number;
+    dia_semana: Weekday;
+    hora_inicio: string;
+    hora_fin: string;
+    motivo_pausa_anterior: string | null;
+  }>;
+  excepciones: Array<{
+    id_excepcion_horario?: number;
+    fecha: string;
+    tipo: "CERRADO" | "HORARIO_ESPECIAL";
+    motivo: string | null;
+    tramos: Array<{
+      id_tramo_excepcion?: number;
+      hora_inicio: string;
+      hora_fin: string;
+    }>;
+  }>;
+  feriados: Array<{
+    id_feriado?: number;
+    tipo: "FIJO" | "DINAMICO";
+    nombre: string;
+    mes: number | null;
+    dia: number | null;
+    fecha: string | null;
+  }>;
 };
 
 export type TreatmentStatus =
@@ -325,7 +381,7 @@ export type TreatmentListItem = {
 
 export type TreatmentOptions = {
   patients: Array<{
-    id_historial: number;
+    id_historial: number | null;
     id_paciente: number;
     nombre: string;
     ap_paterno: string;
@@ -395,6 +451,7 @@ export type CatalogService = {
   id_categoria: number;
   nombre: string;
   duracion_minutos: number;
+  precio: string | number;
   descripcion: string | null;
   requiere_valoracion: boolean;
   estado: GeneralStatus;
@@ -407,6 +464,14 @@ export type ServiceCatalogData = {
   categories: ServiceCategory[];
   services: CatalogService[];
   measures: MeasureType[];
+  productCategories: ProductCategory[];
+};
+
+export type ProductCategory = {
+  id_categoria_producto: number;
+  nombre: string;
+  descripcion: string | null;
+  estado: GeneralStatus;
 };
 
 export type Weekday = "LUNES" | "MARTES" | "MIERCOLES" | "JUEVES" | "VIERNES" | "SABADO" | "DOMINGO";
@@ -430,6 +495,7 @@ export type RegularSchedule = {
   dia_semana: Weekday;
   hora_inicio: string;
   hora_fin: string;
+  motivo_pausa_anterior: string | null;
   estado: boolean;
 };
 
@@ -782,7 +848,10 @@ export type PromotionOptions = PackageOptions;
 export type LotStatus = "DISPONIBLE" | "AGOTADO" | "VENCIDO" | "BAJA";
 export type InventoryMovementType = "ENTRADA_COMPRA" | "CONSUMO_SESION" | "VENTA" | "AJUSTE_ENTRADA" | "AJUSTE_SALIDA" | "MERMA" | "VENCIMIENTO";
 export type InventoryProduct = {
-  id_producto: number; nombre: string; descripcion: string | null; unidad_medida: string;
+  id_producto: number; id_categoria_producto: number; categoria_producto: string;
+  nombre: string; marca: string | null; sku: string | null; codigo_barras: string | null;
+  descripcion: string | null; unidad_medida: string; presentacion: string;
+  contenido_presentacion: string | number; precio_venta: string | number | null;
   imagen_url: string | null; es_insumo: boolean; es_vendible: boolean;
   stock_minimo: string | number; estado: GeneralStatus; lotes: number; stock_actual: string | number;
 };
@@ -800,6 +869,7 @@ export type InventoryMovement = {
 export type InventoryOptions = {
   products: Array<{ id_producto: number; nombre: string; unidad_medida: string; es_insumo: boolean; es_vendible: boolean }>;
   lots: Array<{ id_lote: number; id_producto: number; numero_lote: string | null; fecha_vencimiento: string | null; estado: LotStatus; producto: string; unidad_medida: string; stock_actual: string | number }>;
+  productCategories: ProductCategory[];
 };
 export type SaleNoteStatus = "EMITIDA" | "ANULADA";
 export type PaymentStatus = "REGISTRADO" | "ANULADO";
@@ -814,10 +884,12 @@ export type SalesOptions = {
 };
 export type AcquisitionStatus = "ACTIVA" | "COMPLETADA" | "CANCELADA";
 export type Acquisition = { id_adquisicion:number; id_paciente:number; id_paquete:number|null; id_promocion:number|null; fecha_adquisicion:string; precio_original:string|number; descuento:string|number; total:string|number; estado:AcquisitionStatus; paciente:string; ci:string|null; origen:string; sesiones_incluidas:number; sesiones_asignadas:number; sesiones_realizadas:number; detalles:Array<{id_detalle_adquisicion:number;id_servicio:number;servicio:string;sesiones_incluidas:number;precio_unitario:string|number;subtotal:string|number}> };
-export type AcquisitionOptions = { patients:Array<{id_paciente:number;nombre:string;ap_paterno:string;ap_materno:string|null;ci:string|null}>; offers:Array<{id:number;nombre:string;tipo:"PAQUETE"|"PROMOCION";precio?:string|number;tipo_descuento?:DiscountType;valor_descuento?:string|number;servicios:Array<{id_servicio:number;servicio:string;sesiones_incluidas:number}>}> };
+export type AcquisitionOptions = { patients:Array<{id_paciente:number;nombre:string;ap_paterno:string;ap_materno:string|null;ci:string|null}>; offers:Array<{id:number;nombre:string;tipo:"PAQUETE"|"PROMOCION";precio?:string|number;tipo_descuento?:DiscountType;valor_descuento?:string|number;servicios:Array<{id_servicio:number;servicio:string;sesiones_incluidas:number;precio:string|number}>}> };
 export type StockOperation = { id_consumo?:number;id_salida?:number;id_sesion?:number;id_detalle?:number;cantidad:string|number;registrado_en?:string;fecha_movimiento:string;observaciones:string|null;producto:string;unidad_medida:string;numero_lote:string|null;referencia:string };
 export type InventoryOperationOptions = { sessions:Array<{id_sesion:number;fecha_sesion:string;servicio:string;paciente:string}>; saleDetails:Array<{id_detalle:number;id_producto:number;producto:string;cantidad:string|number;numero_nota:string;cantidad_salida:string|number;pendiente:string|number}>; lots:InventoryOptions["lots"] };
-export type Company = { id_empresa:number;nombre_comercial:string;razon_social:string|null;telefono1:string|null;telefono2:string|null;correo:string|null;direccion:string|null;sitio_web:string|null;logo_url:string|null;moneda:string;estado:GeneralStatus };
+export type Company = { id_empresa:number;nombre_comercial:string;razon_social:string|null;nit:string|null;actividad_economica:string|null;telefono1:string|null;telefono2:string|null;correo:string|null;direccion:string|null;sitio_web:string|null;logo_url:string|null;moneda:string;eslogan_principal:string|null;titulo_login:string|null;descripcion_corta:string|null;imagen_fondo_login_url:string|null;imagen_fondo_panel_login_url:string|null };
+export type CompanyBranding = { name:string;tagline:string;loginTitle:string;shortDescription:string;hasLogo:boolean;hasLoginBackground:boolean;hasLoginPanelBackground:boolean };
+export type CurrencyOption = { code:string;name:string;countries:string };
 export type DocumentConfig={id_configuracion:number;id_empresa:number;encabezado:string|null;pie_pagina:string|null;mostrar_logo:boolean;mostrar_direccion:boolean;mostrar_telefono:boolean;mostrar_correo:boolean};
 export type AuditEventItem={id_auditoria:string;id_usuario_accion:number;id_usuario_afectado:number|null;accion:string;entidad:string;id_registro:string|null;descripcion:string|null;ip:string|null;user_agent:string|null;fecha:string;usuario_accion:string;usuario_afectado:string};
 export type AccessItem={id_acceso:string;id_usuario:number|null;identificador_intento:string|null;fecha_login:string;fecha_logout:string|null;login_exitoso:boolean;motivo_fallo:string|null;ip:string|null;user_agent:string|null;usuario?:{id_usuario:number;persona?:{nombre:string;ap_paterno:string;ap_materno:string|null}}|null};

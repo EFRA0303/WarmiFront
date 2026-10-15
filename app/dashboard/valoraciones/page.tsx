@@ -62,7 +62,7 @@ export default async function ValuationsPage({ searchParams }: { searchParams: P
   const current = Math.min(page, pages);
   return <section className="directory-page valuations-page" data-directory-scope="valuations">
     <header className="directory-heading"><div><span className="page-eyebrow">ATENCIÓN CLÍNICA</span><h1>Valoraciones y medidas</h1><p>Registra evaluaciones y compara la evolución clínica de cada paciente.</p></div>{canCreate && <NewValuationDialog options={options.value} />}</header>
-    <DirectoryTableActions scope="valuations" fileName="valoraciones-warmi" columns={columns} showActions={canEdit} />
+    <DirectoryTableActions scope="valuations" fileName="valoraciones" columns={columns} showActions={canEdit} />
     <div className="directory-toolbar"><form action="/dashboard/valoraciones" method="get"><label className="directory-search"><SearchIcon /><DynamicSearchInput id="valuation-search" initialValue={search} placeholder="Buscar paciente, CI, servicio o profesional..." basePath="/dashboard/valoraciones" /></label><ValuationTypeFilter key={tipo ?? "all"} initialValue={tipo} /></form></div>
     {data.length ? <>
       <div className="directory-table-card valuations-table"><div className="directory-table-scroll"><table className="directory-table"><thead><tr><th data-directory-column="patient">Paciente</th><th data-directory-column="type">Tipo</th><th data-directory-column="origin">Origen / servicio</th><th data-directory-column="professional">Profesional</th><th data-directory-column="date">Fecha</th><th data-directory-column="measures">Medidas</th>{canEdit && <th data-directory-column="actions">Acciones</th>}</tr></thead><tbody>

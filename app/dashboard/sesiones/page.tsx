@@ -132,7 +132,7 @@ export default async function SessionsPage({
       </header>
       <DirectoryTableActions
         scope="sessions"
-        fileName="sesiones-warmi"
+        fileName="sesiones"
         columns={columns}
         showActions={canEdit}
       />

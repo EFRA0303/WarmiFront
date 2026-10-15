@@ -51,34 +51,97 @@ export async function saveProduct(
   data: FormData,
 ): Promise<RegistrationState> {
   const nombre = text(data, "nombre");
+  const categoria = Number(text(data, "id_categoria_producto"));
   const unidad = text(data, "unidad_medida");
   const stock = text(data, "stock_minimo").replace(",", ".");
+  const contenido = text(data, "contenido_presentacion").replace(",", ".");
+  const precio = text(data, "precio_venta").replace(",", ".");
+  const esInsumo = data.get("es_insumo") === "on";
+  const esVendible = data.get("es_vendible") === "on";
+  const imageEntry = data.get("imagen");
+  const image = imageEntry instanceof File && imageEntry.size > 0 ? imageEntry : null;
   const errors: Record<string, string> = {};
   if (!nombre) errors.nombre = "Ingresa el nombre.";
+  if (!Number.isInteger(categoria) || categoria < 1) errors.id_categoria_producto = "Selecciona una categoría.";
   if (!unidad) errors.unidad_medida = "Ingresa la unidad de medida.";
   if (!numeric(stock)) errors.stock_minimo = "Ingresa un stock mínimo válido.";
+  if (!/^\d+(?:\.\d{1,3})?$/.test(contenido) || Number(contenido) <= 0) errors.contenido_presentacion = "Ingresa un contenido mayor a cero.";
+  if (!esInsumo && !esVendible) errors.es_insumo = "Selecciona al menos un uso para el producto.";
+  if (esVendible && (!numeric(precio) || Number(precio) < 0)) errors.precio_venta = "Ingresa un precio de venta válido.";
+  if (image && image.size > 5 * 1024 * 1024)
+    errors.imagen = "La imagen no puede superar los 5 MB.";
+  if (image && !["image/jpeg", "image/png", "image/webp"].includes(image.type))
+    errors.imagen = "Usa una imagen JPG, JPEG, PNG o WEBP.";
   if (Object.keys(errors).length) return { fieldErrors: errors };
   const body = {
+    id_categoria_producto: categoria,
     nombre,
-    descripcion: text(data, "descripcion") || undefined,
+    marca: text(data, "marca"),
+    sku: text(data, "sku"),
+    codigo_barras: text(data, "codigo_barras"),
+    descripcion: text(data, "descripcion"),
     unidad_medida: unidad,
-    imagen_url: text(data, "imagen_url") || undefined,
-    es_insumo: data.get("es_insumo") === "on",
-    es_vendible: data.get("es_vendible") === "on",
+    presentacion: text(data, "presentacion"),
+    contenido_presentacion: contenido,
+    precio_venta: esVendible ? precio : null,
+    es_insumo: esInsumo,
+    es_vendible: esVendible,
     stock_minimo: stock,
-    estado: text(data, "estado") || "ACTIVO",
+    ...(id ? { estado: text(data, "estado") || "ACTIVO" } : {}),
   };
-  const result = await mutate(
-    id ? `/inventario/productos/${id}` : "/inventario/productos",
-    id ? "PATCH" : "POST",
-    body,
-  );
-  return (
-    result ??
-    success(
-      id ? "Producto actualizado" : "Producto creado",
-      "Los datos del inventario fueron guardados.",
-    )
+  const token = await getSessionToken();
+  if (!token) return failure("La sesión venció.");
+  try {
+    const response = await fetch(
+      backendUrl(id ? `/inventario/productos/${id}` : "/inventario/productos"),
+      {
+        method: id ? "PATCH" : "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+        cache: "no-store",
+      },
+    );
+    if (!response.ok)
+      return failure(
+        (await readApiMessage(response)) || "No fue posible guardar el producto.",
+      );
+    const saved = (await response.json()) as { id_producto: number };
+    const productId = id ?? saved.id_producto;
+
+    if (image) {
+      const upload = new FormData();
+      upload.append("imagen", image, image.name);
+      const imageResponse = await fetch(
+        backendUrl(`/inventario/productos/${productId}/imagen`),
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: upload,
+          cache: "no-store",
+        },
+      );
+      if (!imageResponse.ok)
+        return {
+          resultId: randomUUID(),
+          outcome: "error",
+          title: "Producto guardado sin imagen",
+          message:
+            (await readApiMessage(imageResponse)) ||
+            "Los datos se guardaron, pero no fue posible procesar la imagen. Puedes intentarlo nuevamente desde Editar.",
+        };
+    }
+  } catch {
+    return failure("No pudimos conectar con el servidor.");
+  }
+  revalidatePath("/dashboard/inventario", "layout");
+  return success(
+    id ? "Producto actualizado" : "Producto creado",
+    image
+      ? "Los datos y la imagen WebP del producto fueron guardados."
+      : "Los datos del inventario fueron guardados.",
   );
 }
 export async function saveLot(

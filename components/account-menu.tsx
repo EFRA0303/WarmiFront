@@ -14,6 +14,8 @@ import {
   UserSettingsIcon,
 } from "@/components/icons";
 import { PasswordStrength } from "@/components/password-strength";
+import { InternationalPhoneInput } from "@/components/international-phone-input";
+import { CurrentUserAvatar } from "@/components/current-user-avatar";
 import { useCloseDetailsOnOutside } from "@/components/use-close-details-on-outside";
 import type { AccountActionState, CurrentUser } from "@/lib/types";
 import "./account-menu.css";
@@ -50,7 +52,7 @@ export function AccountMenu({
   const [showCurrent, setShowCurrent] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const initialPhotoUrl = user.foto_perfil_ruta ? `/api/users/${user.id_usuario}/profile-photo` : null;
+  const initialPhotoUrl = user.foto_perfil_ruta ? "/api/account/profile-photo" : null;
   const [profilePhotoPreview, setProfilePhotoPreview] = useState<string | null>(initialPhotoUrl);
   const [profilePhotoError, setProfilePhotoError] = useState("");
   useCloseDetailsOnOutside(detailsRef);
@@ -90,7 +92,7 @@ export function AccountMenu({
     <div className="account-menu">
       <details ref={detailsRef} className="account-menu__details">
         <summary className="topbar-user account-menu__trigger">
-          <span className="topbar-avatar">{initialPhotoUrl ? <Image src={initialPhotoUrl} alt="" width={40} height={40} unoptimized /> : initials || "WU"}</span>
+          <CurrentUserAvatar hasPhoto={Boolean(user.foto_perfil_ruta)} photoKey={user.foto_perfil_ruta} initials={initials} className="topbar-avatar" />
           <span>
             <strong>{displayName}</strong>
             <small>{user.rol?.nombre || "Sin rol"}</small>
@@ -117,7 +119,7 @@ export function AccountMenu({
       </details>
 
       <dialog ref={profileDialogRef} className="account-dialog" onClick={(event) => { if (event.target === profileDialogRef.current && !profilePending) profileDialogRef.current.close(); }}>
-        <form className="account-dialog__panel" action={profileAction} noValidate>
+        <form className="account-dialog__panel" action={profileAction}>
           <header className="account-dialog__header">
             <span className="account-dialog__icon"><UserSettingsIcon /></span>
             <div><small>MI CUENTA</small><h2>Información personal</h2><p>Actualiza tus datos personales y de contacto.</p></div>
@@ -139,8 +141,8 @@ export function AccountMenu({
             <label><span>Documento de identidad</span><input name="ci" maxLength={20} defaultValue={user.persona.ci ?? ""} /></label>
             <label><span>Fecha de nacimiento</span><input name="fecha_nac" type="date" defaultValue={user.persona.fecha_nac?.slice(0, 10) ?? ""} /></label>
             <label><span>Género <b>*</b></span><select name="genero" required defaultValue={user.persona.genero}><option value="FEMENINO">Femenino</option><option value="MASCULINO">Masculino</option></select></label>
-            <label><span>Teléfono principal <b>*</b></span><input name="telefono1" type="tel" required maxLength={30} defaultValue={user.persona.telefono1} aria-invalid={Boolean(profileState.fieldErrors?.telefono1)} />{profileState.fieldErrors?.telefono1 && <small>{profileState.fieldErrors.telefono1}</small>}</label>
-            <label><span>Teléfono alternativo</span><input name="telefono2" type="tel" maxLength={30} defaultValue={user.persona.telefono2 ?? ""} /></label>
+            <InternationalPhoneInput name="telefono1" label="Teléfono principal" required defaultValue={user.persona.telefono1} error={profileState.fieldErrors?.telefono1} />
+            <InternationalPhoneInput name="telefono2" label="Teléfono alternativo" defaultValue={user.persona.telefono2} error={profileState.fieldErrors?.telefono2} />
             <label className="account-profile-grid__wide"><span>Dirección</span><input name="direccion" maxLength={255} defaultValue={user.persona.direccion ?? ""} /></label>
             {profileState.message && <div className={`account-form-result account-form-result--${profileState.success ? "success" : "error"}`} role="status">{profileState.message}</div>}
           </div>

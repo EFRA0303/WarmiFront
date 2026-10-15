@@ -7,6 +7,7 @@ import {
   saveArea,
   saveCategory,
   saveMeasure,
+  saveProductCategory,
   saveService,
   syncServiceMeasures,
 } from "@/app/dashboard/servicios/actions";
@@ -14,17 +15,19 @@ import type {
   CatalogArea,
   CatalogService,
   MeasureType,
+  ProductCategory,
   RegistrationState,
   ServiceCatalogData,
   ServiceCategory,
 } from "@/lib/types";
 
-type Tab = "services" | "measures" | "structure";
+type Tab = "services" | "measures" | "structure" | "product-categories";
 type Editor =
   | { kind: "service"; item?: CatalogService }
   | { kind: "measure"; item?: MeasureType }
   | { kind: "area"; item?: CatalogArea }
-  | { kind: "category"; item?: ServiceCategory }
+  | { kind: "category"; item?: ServiceCategory; areaId?: number }
+  | { kind: "product-category"; item?: ProductCategory }
   | { kind: "assign"; item: CatalogService }
   | null;
 const initial: RegistrationState = {};
@@ -56,6 +59,7 @@ function ServiceForm({ item, categories, close }: { item?: CatalogService; categ
     <label><span>Categoría *</span><select name="id_categoria" defaultValue={item?.id_categoria ?? ""} required><option value="">Seleccionar categoría</option>{activeCategories.map((category) => <option key={category.id_categoria} value={category.id_categoria}>{category.area?.nombre ? `${category.area.nombre} · ` : ""}{category.nombre}</option>)}</select><ErrorText state={state} name="id_categoria" /></label>
     <label><span>Nombre *</span><input name="nombre" defaultValue={item?.nombre ?? ""} maxLength={100} required /><ErrorText state={state} name="nombre" /></label>
     <label><span>Duración en minutos *</span><input name="duracion_minutos" type="number" min="1" max="1440" defaultValue={item?.duracion_minutos ?? 60} required /><ErrorText state={state} name="duracion_minutos" /></label>
+    <label><span>Precio por sesión (Bs) *</span><input name="precio" type="number" min="0" step="0.01" defaultValue={item?.precio ?? 0} required /><ErrorText state={state} name="precio" /></label>
     {item && <label><span>Estado *</span><select name="estado" defaultValue={item.estado}><option value="ACTIVO">Activo</option><option value="BAJA">Baja</option></select></label>}
     <label className="catalog-form__wide catalog-check"><input name="requiere_valoracion" type="checkbox" defaultChecked={item?.requiere_valoracion} /><span><strong>Requiere valoración previa</strong><small>Se mostrará esta condición al indicar el servicio.</small></span></label>
     <label className="catalog-form__wide"><span>Descripción</span><textarea name="descripcion" maxLength={255} rows={4} defaultValue={item?.descripcion ?? ""} /></label>
@@ -76,10 +80,15 @@ function AreaForm({ item, close }: { item?: CatalogArea; close: () => void }) {
   return <><form action={action} className="catalog-form"><div className="catalog-form__grid"><label><span>Nombre *</span><input name="nombre" maxLength={100} defaultValue={item?.nombre ?? ""} required /><ErrorText state={state} name="nombre" /></label>{item && <label><span>Estado *</span><select name="estado" defaultValue={item.estado}><option value="ACTIVO">Activo</option><option value="BAJA">Baja</option></select></label>}<label className="catalog-form__wide"><span>Descripción</span><textarea name="descripcion" maxLength={255} rows={3} defaultValue={item?.descripcion ?? ""} /></label></div><footer><button type="button" className="catalog-secondary" onClick={close}>Cancelar</button><button className="directory-primary" disabled={pending}>{pending ? "Guardando..." : item ? "Guardar cambios" : "Crear área"}</button></footer></form><Result state={state} close={close} /></>;
 }
 
-function CategoryForm({ item, areas, close }: { item?: ServiceCategory; areas: CatalogArea[]; close: () => void }) {
+function CategoryForm({ item, initialAreaId, areas, close }: { item?: ServiceCategory; initialAreaId?: number; areas: CatalogArea[]; close: () => void }) {
   const [state, action, pending] = useActionState(saveCategory.bind(null, item?.id_categoria ?? null), initial);
   const available = areas.filter((area) => area.estado === "ACTIVO" || area.id_area === item?.id_area);
-  return <><form action={action} className="catalog-form"><div className="catalog-form__grid"><label><span>Área *</span><select name="id_area" defaultValue={item?.id_area ?? ""} required><option value="">Seleccionar área</option>{available.map((area) => <option key={area.id_area} value={area.id_area}>{area.nombre}</option>)}</select><ErrorText state={state} name="id_area" /></label><label><span>Nombre *</span><input name="nombre" maxLength={100} defaultValue={item?.nombre ?? ""} required /><ErrorText state={state} name="nombre" /></label>{item && <label><span>Estado *</span><select name="estado" defaultValue={item.estado}><option value="ACTIVO">Activo</option><option value="BAJA">Baja</option></select></label>}<label className="catalog-form__wide"><span>Descripción</span><textarea name="descripcion" maxLength={255} rows={3} defaultValue={item?.descripcion ?? ""} /></label></div><footer><button type="button" className="catalog-secondary" onClick={close}>Cancelar</button><button className="directory-primary" disabled={pending || !available.length}>{pending ? "Guardando..." : item ? "Guardar cambios" : "Crear categoría"}</button></footer></form><Result state={state} close={close} /></>;
+  return <><form action={action} className="catalog-form"><div className="catalog-form__grid"><label><span>Área *</span><select name="id_area" defaultValue={item?.id_area ?? initialAreaId ?? ""} required><option value="">Seleccionar área</option>{available.map((area) => <option key={area.id_area} value={area.id_area}>{area.nombre}</option>)}</select><ErrorText state={state} name="id_area" /></label><label><span>Nombre *</span><input name="nombre" maxLength={100} defaultValue={item?.nombre ?? ""} required /><ErrorText state={state} name="nombre" /></label>{item && <label><span>Estado *</span><select name="estado" defaultValue={item.estado}><option value="ACTIVO">Activo</option><option value="BAJA">Baja</option></select></label>}<label className="catalog-form__wide"><span>Descripción</span><textarea name="descripcion" maxLength={255} rows={3} defaultValue={item?.descripcion ?? ""} /></label></div><footer><button type="button" className="catalog-secondary" onClick={close}>Cancelar</button><button className="directory-primary" disabled={pending || !available.length}>{pending ? "Guardando..." : item ? "Guardar cambios" : "Crear categoría"}</button></footer></form><Result state={state} close={close} /></>;
+}
+
+function ProductCategoryForm({ item, close }: { item?: ProductCategory; close: () => void }) {
+  const [state, action, pending] = useActionState(saveProductCategory.bind(null, item?.id_categoria_producto ?? null), initial);
+  return <><form action={action} className="catalog-form"><div className="catalog-form__grid"><label><span>Nombre *</span><input name="nombre" maxLength={100} defaultValue={item?.nombre ?? ""} placeholder="Ej. Cremas, aceites, descartables" required /><ErrorText state={state} name="nombre" /></label>{item && <label><span>Estado *</span><select name="estado" defaultValue={item.estado}><option value="ACTIVO">Activo</option><option value="BAJA">Baja</option></select></label>}<label className="catalog-form__wide"><span>Descripción</span><textarea name="descripcion" maxLength={255} rows={3} defaultValue={item?.descripcion ?? ""} /></label></div><footer><button type="button" className="catalog-secondary" onClick={close}>Cancelar</button><button className="directory-primary" disabled={pending}>{pending ? "Guardando..." : item ? "Guardar cambios" : "Crear categoría"}</button></footer></form><Result state={state} close={close} /></>;
 }
 
 function AssignmentForm({ service, measures, close }: { service: CatalogService; measures: MeasureType[]; close: () => void }) {
@@ -95,6 +104,38 @@ function AssignmentForm({ service, measures, close }: { service: CatalogService;
 
 function Status({ value }: { value: "ACTIVO" | "BAJA" }) { return <span className={`catalog-status catalog-status--${value.toLowerCase()}`}><i />{value === "ACTIVO" ? "Activo" : "Baja"}</span>; }
 
+function CatalogStructure({ data, canCreate, canEdit, edit }: { data: ServiceCatalogData; canCreate: boolean; canEdit: boolean; edit: (editor: Editor) => void }) {
+  return <div className="catalog-structure">
+    <div className="catalog-structure__guide">
+      <div><span>1</span><strong>Área</strong><small>Agrupa una especialidad o línea principal.</small></div>
+      <i aria-hidden="true">→</i>
+      <div><span>2</span><strong>Categorías</strong><small>Ordenan los servicios que pertenecen al área.</small></div>
+    </div>
+    <div className="catalog-area-grid">
+      {data.areas.map((area) => {
+        const categories = data.categories.filter((category) => category.id_area === area.id_area);
+        return <section className="catalog-area-card" key={area.id_area}>
+          <header>
+            <div className="catalog-area-card__identity"><span className="catalog-area-card__icon"><SettingsIcon /></span><div><span className="catalog-area-card__eyebrow">ÁREA</span><h2>{area.nombre}</h2><p>{area.descripcion || "Sin descripción registrada"}</p></div></div>
+            <div className="catalog-area-card__actions"><Status value={area.estado} />{canEdit && <button type="button" onClick={() => edit({ kind: "area", item: area })} title="Editar área" aria-label={`Editar área ${area.nombre}`}><EditIcon /></button>}</div>
+          </header>
+          <div className="catalog-category-heading"><div><strong>Categorías</strong><small>Servicios organizados dentro de esta área</small></div><span>{categories.length}</span></div>
+          <div className="catalog-category-list">
+            {categories.map((category) => <article key={category.id_categoria}>
+              <div><strong>{category.nombre}</strong><small>{category.descripcion || "Sin descripción"}</small></div>
+              <Status value={category.estado} />
+              {canEdit && <button type="button" onClick={() => edit({ kind: "category", item: category })} title="Editar categoría" aria-label={`Editar categoría ${category.nombre}`}><EditIcon /></button>}
+            </article>)}
+            {!categories.length && <div className="catalog-category-empty"><strong>Esta área aún no tiene categorías</strong><small>Crea la primera para poder organizar sus servicios.</small></div>}
+          </div>
+          {canCreate && <footer><button type="button" onClick={() => edit({ kind: "category", areaId: area.id_area })}><PlusIcon />Agregar categoría en {area.nombre}</button></footer>}
+        </section>;
+      })}
+    </div>
+    {!data.areas.length && <div className="catalog-empty catalog-structure__empty">Primero crea un área para comenzar a organizar las categorías.</div>}
+  </div>;
+}
+
 export function ServiceCatalogManager({ data, canCreate, canEdit, initialTab = "services" }: { data: ServiceCatalogData; canCreate: boolean; canEdit: boolean; initialTab?: Tab }) {
   const [tab, setTab] = useState<Tab>(initialTab);
   const [search, setSearch] = useState("");
@@ -102,16 +143,18 @@ export function ServiceCatalogManager({ data, canCreate, canEdit, initialTab = "
   const term = normalize(search);
   const services = useMemo(() => data.services.filter((item) => normalize(`${item.nombre} ${item.descripcion ?? ""} ${item.categoria?.nombre ?? ""} ${item.categoria?.area?.nombre ?? ""}`).includes(term)), [data.services, term]);
   const measures = useMemo(() => data.measures.filter((item) => normalize(`${item.nombre} ${item.unidad ?? ""}`).includes(term)), [data.measures, term]);
+  const productCategories = useMemo(() => data.productCategories.filter((item) => normalize(`${item.nombre} ${item.descripcion ?? ""}`).includes(term)), [data.productCategories, term]);
   const close = () => setEditor(null);
-  const newItem = () => setEditor({ kind: tab === "services" ? "service" : tab === "measures" ? "measure" : "area" });
+  const newItem = () => setEditor({ kind: tab === "services" ? "service" : tab === "measures" ? "measure" : tab === "product-categories" ? "product-category" : "area" });
   return <div className="catalog-manager">
-    <div className="catalog-tabs"><button className={tab === "services" ? "active" : ""} onClick={() => { setTab("services"); setSearch(""); }}>Servicios <span>{data.services.length}</span></button><button className={tab === "measures" ? "active" : ""} onClick={() => { setTab("measures"); setSearch(""); }}>Mediciones <span>{data.measures.length}</span></button><button className={tab === "structure" ? "active" : ""} onClick={() => { setTab("structure"); setSearch(""); }}>Áreas y categorías</button></div>
-    <div className="catalog-toolbar">{tab !== "structure" && <label><SearchIcon /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={tab === "services" ? "Buscar servicio, categoría o área..." : "Buscar medición o unidad..."} /></label>}{canCreate && <div className="catalog-create-actions">{tab === "structure" && <button className="catalog-secondary" type="button" onClick={() => setEditor({ kind: "category" })}><PlusIcon />Nueva categoría</button>}<button className="directory-primary" type="button" onClick={newItem}><PlusIcon />{tab === "services" ? "Nuevo servicio" : tab === "measures" ? "Nueva medición" : "Nueva área"}</button></div>}</div>
-    {tab === "services" && <div className="catalog-table-card"><table><thead><tr><th>Servicio</th><th>Área / categoría</th><th>Duración</th><th>Mediciones</th><th>Valoración</th><th>Estado</th>{canEdit && <th>Acciones</th>}</tr></thead><tbody>{services.map((service) => <tr key={service.id_servicio}><td><strong>{service.nombre}</strong><small>{service.descripcion || "Sin descripción"}</small></td><td><strong>{service.categoria?.area?.nombre || "Sin área"}</strong><small>{service.categoria?.nombre || `Categoría #${service.id_categoria}`}</small></td><td><strong>{service.duracion_minutos} min</strong></td><td><button className="catalog-measure-count" type="button" disabled={!canEdit} onClick={() => setEditor({ kind: "assign", item: service })}>{service.medidas.length} configuradas</button></td><td>{service.requiere_valoracion ? "Sí" : "No"}</td><td><Status value={service.estado} /></td>{canEdit && <td><div className="catalog-row-actions"><button onClick={() => setEditor({ kind: "assign", item: service })} title="Configurar mediciones"><SettingsIcon /></button><button onClick={() => setEditor({ kind: "service", item: service })} title="Editar servicio"><EditIcon /></button></div></td>}</tr>)}</tbody></table>{!services.length && <div className="catalog-empty">No encontramos servicios con esos criterios.</div>}</div>}
+    <div className="catalog-tabs"><button className={tab === "services" ? "active" : ""} onClick={() => { setTab("services"); setSearch(""); }}>Servicios <span>{data.services.length}</span></button><button className={tab === "measures" ? "active" : ""} onClick={() => { setTab("measures"); setSearch(""); }}>Mediciones <span>{data.measures.length}</span></button><button className={tab === "structure" ? "active" : ""} onClick={() => { setTab("structure"); setSearch(""); }} title={`${data.areas.length} áreas y ${data.categories.length} categorías`}>Áreas y categorías <span>{data.areas.length}/{data.categories.length}</span></button><button className={tab === "product-categories" ? "active" : ""} onClick={() => { setTab("product-categories"); setSearch(""); }}>Categorías de productos <span>{data.productCategories.length}</span></button></div>
+    <div className="catalog-toolbar">{tab !== "structure" && <label><SearchIcon /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={tab === "services" ? "Buscar servicio, categoría o área..." : tab === "measures" ? "Buscar medición o unidad..." : "Buscar categoría de producto..."} /></label>}{canCreate && <div className="catalog-create-actions"><button className="directory-primary" type="button" onClick={newItem}><PlusIcon />{tab === "services" ? "Nuevo servicio" : tab === "measures" ? "Nueva medición" : tab === "product-categories" ? "Nueva categoría" : "Nueva área"}</button></div>}</div>
+    {tab === "services" && <div className="catalog-table-card"><table><thead><tr><th>Servicio</th><th>Área / categoría</th><th>Duración</th><th>Precio</th><th>Mediciones</th><th>Valoración</th><th>Estado</th>{canEdit && <th>Acciones</th>}</tr></thead><tbody>{services.map((service) => <tr key={service.id_servicio}><td><strong>{service.nombre}</strong><small>{service.descripcion || "Sin descripción"}</small></td><td><strong>{service.categoria?.area?.nombre || "Sin área"}</strong><small>{service.categoria?.nombre || `Categoría #${service.id_categoria}`}</small></td><td><strong>{service.duracion_minutos} min</strong></td><td><strong>Bs {Number(service.precio).toFixed(2)}</strong></td><td><button className="catalog-measure-count" type="button" disabled={!canEdit} onClick={() => setEditor({ kind: "assign", item: service })}>{service.medidas.length} configuradas</button></td><td>{service.requiere_valoracion ? "Sí" : "No"}</td><td><Status value={service.estado} /></td>{canEdit && <td><div className="catalog-row-actions"><button onClick={() => setEditor({ kind: "assign", item: service })} title="Configurar mediciones"><SettingsIcon /></button><button onClick={() => setEditor({ kind: "service", item: service })} title="Editar servicio"><EditIcon /></button></div></td>}</tr>)}</tbody></table>{!services.length && <div className="catalog-empty">No encontramos servicios con esos criterios.</div>}</div>}
     {tab === "measures" && <div className="catalog-table-card"><table><thead><tr><th>Medición</th><th>Unidad</th><th>Servicios asociados</th><th>Estado</th>{canEdit && <th>Acciones</th>}</tr></thead><tbody>{measures.map((measure) => { const count = data.services.filter((service) => service.medidas.some((item) => item.id_tipo_medida === measure.id_tipo_medida)).length; return <tr key={measure.id_tipo_medida}><td><strong>{measure.nombre}</strong></td><td>{measure.unidad || "Sin unidad"}</td><td>{count} servicios</td><td><Status value={measure.estado} /></td>{canEdit && <td><div className="catalog-row-actions"><button onClick={() => setEditor({ kind: "measure", item: measure })} title="Editar medición"><EditIcon /></button></div></td>}</tr>; })}</tbody></table>{!measures.length && <div className="catalog-empty">No encontramos mediciones con esos criterios.</div>}</div>}
-    {tab === "structure" && <div className="catalog-structure"><section><header><div><h2>Áreas</h2><p>Agrupan las categorías principales.</p></div></header>{data.areas.map((area) => <article key={area.id_area}><div><strong>{area.nombre}</strong><small>{area.descripcion || "Sin descripción"}</small></div><Status value={area.estado} />{canEdit && <button onClick={() => setEditor({ kind: "area", item: area })}><EditIcon /></button>}</article>)}</section><section><header><div><h2>Categorías</h2><p>Organizan los servicios dentro de cada área.</p></div></header>{data.categories.map((category) => <article key={category.id_categoria}><div><strong>{category.nombre}</strong><small>{category.area?.nombre || `Área #${category.id_area}`}</small></div><Status value={category.estado} />{canEdit && <button onClick={() => setEditor({ kind: "category", item: category })}><EditIcon /></button>}</article>)}</section></div>}
-    <Dialog open={editor !== null} onClose={close} eyebrow={editor?.kind === "assign" ? "CONFIGURACIÓN CLÍNICA" : "CATÁLOGO DE SERVICIOS"} title={editor?.kind === "service" ? `${editor.item ? "Editar" : "Nuevo"} servicio` : editor?.kind === "measure" ? `${editor.item ? "Editar" : "Nueva"} medición` : editor?.kind === "area" ? `${editor.item ? "Editar" : "Nueva"} área` : editor?.kind === "category" ? `${editor.item ? "Editar" : "Nueva"} categoría` : editor?.kind === "assign" ? `Mediciones de ${editor.item.nombre}` : "Catálogo"} description={editor?.kind === "assign" ? "Selecciona qué datos clínicos se registrarán durante este servicio." : "Completa los datos usando la estructura actual del sistema."}>
-      {editor?.kind === "service" && <ServiceForm key={editor.item?.id_servicio ?? "new"} item={editor.item} categories={data.categories} close={close} />}{editor?.kind === "measure" && <MeasureForm key={editor.item?.id_tipo_medida ?? "new"} item={editor.item} close={close} />}{editor?.kind === "area" && <AreaForm key={editor.item?.id_area ?? "new"} item={editor.item} close={close} />}{editor?.kind === "category" && <CategoryForm key={editor.item?.id_categoria ?? "new"} item={editor.item} areas={data.areas} close={close} />}{editor?.kind === "assign" && <AssignmentForm key={editor.item.id_servicio} service={editor.item} measures={data.measures} close={close} />}
+    {tab === "structure" && <CatalogStructure data={data} canCreate={canCreate} canEdit={canEdit} edit={setEditor} />}
+    {tab === "product-categories" && <div className="catalog-table-card"><table><thead><tr><th>Categoría de producto</th><th>Descripción</th><th>Estado</th>{canEdit && <th>Acciones</th>}</tr></thead><tbody>{productCategories.map((category) => <tr key={category.id_categoria_producto}><td><strong>{category.nombre}</strong></td><td>{category.descripcion || "Sin descripción"}</td><td><Status value={category.estado} /></td>{canEdit && <td><div className="catalog-row-actions"><button onClick={() => setEditor({ kind: "product-category", item: category })} title="Editar categoría"><EditIcon /></button></div></td>}</tr>)}</tbody></table>{!productCategories.length && <div className="catalog-empty">No encontramos categorías de productos.</div>}</div>}
+    <Dialog open={editor !== null} onClose={close} eyebrow={editor?.kind === "assign" ? "CONFIGURACIÓN CLÍNICA" : "CATÁLOGO"} title={editor?.kind === "service" ? `${editor.item ? "Editar" : "Nuevo"} servicio` : editor?.kind === "measure" ? `${editor.item ? "Editar" : "Nueva"} medición` : editor?.kind === "area" ? `${editor.item ? "Editar" : "Nueva"} área` : editor?.kind === "category" ? `${editor.item ? "Editar" : "Nueva"} categoría` : editor?.kind === "product-category" ? `${editor.item ? "Editar" : "Nueva"} categoría de producto` : editor?.kind === "assign" ? `Mediciones de ${editor.item.nombre}` : "Catálogo"} description={editor?.kind === "assign" ? "Selecciona qué datos clínicos se registrarán durante este servicio." : "Completa los datos usando la estructura actual del sistema."}>
+      {editor?.kind === "service" && <ServiceForm key={editor.item?.id_servicio ?? "new"} item={editor.item} categories={data.categories} close={close} />}{editor?.kind === "measure" && <MeasureForm key={editor.item?.id_tipo_medida ?? "new"} item={editor.item} close={close} />}{editor?.kind === "area" && <AreaForm key={editor.item?.id_area ?? "new"} item={editor.item} close={close} />}{editor?.kind === "category" && <CategoryForm key={editor.item?.id_categoria ?? `new-${editor.areaId ?? "category"}`} item={editor.item} initialAreaId={editor.areaId} areas={data.areas} close={close} />}{editor?.kind === "product-category" && <ProductCategoryForm key={editor.item?.id_categoria_producto ?? "new"} item={editor.item} close={close} />}{editor?.kind === "assign" && <AssignmentForm key={editor.item.id_servicio} service={editor.item} measures={data.measures} close={close} />}
     </Dialog>
   </div>;
 }

@@ -46,15 +46,18 @@ export async function saveService(serviceId: number | null, _state: Registration
   const categoryId = id(data, "id_categoria");
   const name = text(data, "nombre");
   const duration = id(data, "duracion_minutos");
+  const price = text(data, "precio").replace(",", ".");
   const fieldErrors: Record<string, string> = {};
   if (!categoryId) fieldErrors.id_categoria = "Selecciona una categoría.";
   if (!name) fieldErrors.nombre = "Ingresa el nombre del servicio.";
   if (!duration) fieldErrors.duracion_minutos = "Ingresa una duración válida.";
+  if (!/^\d+(?:\.\d{1,2})?$/.test(price)) fieldErrors.precio = "Ingresa un precio válido.";
   if (Object.keys(fieldErrors).length) return { fieldErrors };
   const body = {
     id_categoria: categoryId,
     nombre: name,
     duracion_minutos: duration,
+    precio: price,
     descripcion: text(data, "descripcion") || null,
     requiere_valoracion: data.get("requiere_valoracion") === "on",
     ...(serviceId ? { estado: text(data, "estado") } : {}),
@@ -89,6 +92,14 @@ export async function saveCategory(categoryId: number | null, _state: Registrati
   const body = { id_area: areaId, nombre: name, descripcion: text(data, "descripcion") || null, ...(categoryId ? { estado: text(data, "estado") } : {}) };
   const result = await mutate(categoryId ? `/catalogo/categorias/${categoryId}` : "/catalogo/categorias", categoryId ? "PATCH" : "POST", body);
   return result ?? success(categoryId ? "Categoría actualizada" : "Categoría creada", "La estructura del catálogo quedó actualizada.");
+}
+
+export async function saveProductCategory(categoryId: number | null, _state: RegistrationState, data: FormData): Promise<RegistrationState> {
+  const name = text(data, "nombre");
+  if (!name) return { fieldErrors: { nombre: "Ingresa el nombre de la categoría." } };
+  const body = { nombre: name, descripcion: text(data, "descripcion") || null, ...(categoryId ? { estado: text(data, "estado") } : {}) };
+  const result = await mutate(categoryId ? `/catalogo/categorias-producto/${categoryId}` : "/catalogo/categorias-producto", categoryId ? "PATCH" : "POST", body);
+  return result ?? success(categoryId ? "Categoría actualizada" : "Categoría creada", "La clasificación de productos quedó actualizada.");
 }
 
 export async function syncServiceMeasures(serviceId: number, currentIds: number[], _state: RegistrationState, data: FormData): Promise<RegistrationState> {

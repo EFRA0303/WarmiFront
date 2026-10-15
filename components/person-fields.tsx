@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition, type FocusEvent, type FormEvent } from "react";
 import { checkRegistrationAvailability } from "@/app/dashboard/registration-actions";
+import { InternationalPhoneInput } from "@/components/international-phone-input";
 import type { PersonSummary, RegistrationState } from "@/lib/types";
 
 function errorFor(state: RegistrationState, name: string) {
@@ -36,9 +37,13 @@ export function PersonFields({ state, person }: { state: RegistrationState; pers
     if (position !== null) input.setSelectionRange(position, position);
   }
 
-  function runUniqueCheck(field: "ci" | "telefono1", input: HTMLInputElement) {
+  function currentValue(field: "ci" | "telefono1", input: HTMLInputElement) {
+    return field === "telefono1" ? input.dataset.e164 ?? "" : input.value.trim();
+  }
+
+  function runUniqueCheck(field: "ci" | "telefono1", input: HTMLInputElement, normalizedValue?: string) {
     if (person) return;
-    const value = input.value.trim();
+    const value = normalizedValue ?? currentValue(field, input);
     input.setCustomValidity("");
     if (!value) {
       setAvailability((current) => ({ ...current, [field]: { available: true, message: "" } }));
@@ -47,24 +52,25 @@ export function PersonFields({ state, person }: { state: RegistrationState; pers
     setAvailability((current) => ({ ...current, [field]: { message: "Verificando disponibilidad..." } }));
     startChecking(async () => {
       const result = await checkRegistrationAvailability(field, value);
-      if (input.value.trim() !== value) return;
+      if (currentValue(field, input) !== value) return;
       const message = result.message;
       input.setCustomValidity(result.ok && result.available === false ? message : "");
       setAvailability((current) => ({ ...current, [field]: { available: result.available, message } }));
     });
   }
 
-  function scheduleUniqueCheck(field: "ci" | "telefono1", input: HTMLInputElement) {
+  function scheduleUniqueCheck(field: "ci" | "telefono1", input: HTMLInputElement, normalizedValue?: string) {
     input.setCustomValidity("");
     clearTimeout(timers.current[field]);
     setAvailability((current) => ({ ...current, [field]: { message: "" } }));
-    if (!input.value.trim() || person) return;
-    timers.current[field] = setTimeout(() => runUniqueCheck(field, input), 550);
+    const value = normalizedValue ?? currentValue(field, input);
+    if (!value || person) return;
+    timers.current[field] = setTimeout(() => runUniqueCheck(field, input, value), 550);
   }
 
-  function checkUniqueOnBlur(field: "ci" | "telefono1", event: FocusEvent<HTMLInputElement>) {
+  function checkUniqueOnBlur(field: "ci" | "telefono1", input: HTMLInputElement, normalizedValue?: string) {
     clearTimeout(timers.current[field]);
-    runUniqueCheck(field, event.currentTarget);
+    runUniqueCheck(field, input, normalizedValue);
   }
 
   function feedback(field: string) {
@@ -96,7 +102,7 @@ export function PersonFields({ state, person }: { state: RegistrationState; pers
       </label>
       <label className="registration-field">
         <span>Documento de identidad</span>
-        <input name="ci" maxLength={20} defaultValue={person?.ci ?? ""} onInput={(event) => scheduleUniqueCheck("ci", event.currentTarget)} onBlur={(event) => checkUniqueOnBlur("ci", event)} />
+        <input name="ci" maxLength={20} defaultValue={person?.ci ?? ""} onInput={(event) => scheduleUniqueCheck("ci", event.currentTarget)} onBlur={(event) => checkUniqueOnBlur("ci", event.currentTarget)} />
         {checking && !availability.ci?.message ? null : feedback("ci")}
       </label>
       <label className="registration-field">
@@ -112,16 +118,29 @@ export function PersonFields({ state, person }: { state: RegistrationState; pers
         </select>
         {errorFor(state, "genero") && <small>{errorFor(state, "genero")}</small>}
       </label>
-      <label className="registration-field">
-        <span>Teléfono principal <b>*</b></span>
-        <input name="telefono1" type="tel" maxLength={30} required defaultValue={person?.telefono1} onInput={(event) => scheduleUniqueCheck("telefono1", event.currentTarget)} onBlur={(event) => checkUniqueOnBlur("telefono1", event)} aria-invalid={Boolean(errorFor(state, "telefono1"))} />
-        {errorFor(state, "telefono1") && <small>{errorFor(state, "telefono1")}</small>}
-        {feedback("telefono1")}
-      </label>
-      <label className="registration-field">
-        <span>Teléfono alternativo</span>
-        <input name="telefono2" type="tel" maxLength={30} defaultValue={person?.telefono2 ?? ""} />
-      </label>
+      <InternationalPhoneInput
+        className="registration-field"
+        name="telefono1"
+        label="Teléfono principal"
+        required
+        defaultValue={person?.telefono1}
+        error={errorFor(state, "telefono1")}
+        onValueChange={(value, input, valid) => {
+          if (valid) scheduleUniqueCheck("telefono1", input, value);
+          else setAvailability((current) => ({ ...current, telefono1: { message: "" } }));
+        }}
+        onPhoneBlur={(value, input, valid) => {
+          if (valid) checkUniqueOnBlur("telefono1", input, value);
+        }}
+        after={feedback("telefono1")}
+      />
+      <InternationalPhoneInput
+        className="registration-field"
+        name="telefono2"
+        label="Teléfono alternativo"
+        defaultValue={person?.telefono2}
+        error={errorFor(state, "telefono2")}
+      />
       <label className="registration-field registration-field--wide">
         <span>Dirección</span>
         <input name="direccion" maxLength={255} defaultValue={person?.direccion ?? ""} />

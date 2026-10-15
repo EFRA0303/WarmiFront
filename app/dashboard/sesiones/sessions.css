@@ -84,7 +84,7 @@
   gap: 6px;
 }
 
-.session-actions button {
+.session-actions > button {
   display: grid;
   width: 35px;
   height: 35px;
@@ -96,19 +96,19 @@
   color: var(--primary-strong);
 }
 
-.session-actions button:hover,
-.session-actions button:focus-visible {
+.session-actions > button:hover,
+.session-actions > button:focus-visible {
   border-color: currentColor;
   background: var(--primary-soft);
 }
 
-.session-actions button.finish {
+.session-actions > button.finish {
   color: #15916c;
 }
-.session-actions button.cancel {
+.session-actions > button.cancel {
   color: var(--danger);
 }
-.session-actions svg {
+.session-actions > button svg {
   width: 15px;
 }
 

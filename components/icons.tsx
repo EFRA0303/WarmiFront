@@ -26,6 +26,33 @@ export const MailIcon = (props: IconProps) => (
   </IconBase>
 );
 
+export const PhoneIcon = (props: IconProps) => (
+  <IconBase {...props}>
+    <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.4 19.4 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c1 .4 1.9.6 2.9.7a2 2 0 0 1 1.7 2Z" />
+  </IconBase>
+);
+
+export const MapPinIcon = (props: IconProps) => (
+  <IconBase {...props}>
+    <path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z" />
+    <circle cx="12" cy="10" r="2.5" />
+  </IconBase>
+);
+
+export const GlobeIcon = (props: IconProps) => (
+  <IconBase {...props}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" />
+  </IconBase>
+);
+
+export const UploadIcon = (props: IconProps) => (
+  <IconBase {...props}>
+    <path d="M12 16V4M7 9l5-5 5 5" />
+    <path d="M5 20h14" />
+  </IconBase>
+);
+
 export const LockIcon = (props: IconProps) => (
   <IconBase {...props}>
     <rect x="4" y="10" width="16" height="11" rx="3" />
@@ -220,6 +247,13 @@ export const HistoryIcon = (props: IconProps) => (
   <IconBase {...props}>
     <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
     <path d="M3 3v5h5M12 7v5l3 2" />
+  </IconBase>
+);
+
+export const ClockIcon = (props: IconProps) => (
+  <IconBase {...props}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7v5l3.5 2" />
   </IconBase>
 );
 

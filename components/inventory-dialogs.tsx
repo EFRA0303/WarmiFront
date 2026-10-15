@@ -6,7 +6,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { BoxIcon, CloseIcon, EditIcon, PlusIcon } from "@/components/icons";
+import Image from "next/image";
+import { BoxIcon, CloseIcon, EditIcon, PlusIcon, UploadIcon } from "@/components/icons";
 import { SubmissionResultDialog } from "@/components/submission-result-dialog";
 import {
   createMovement,
@@ -17,9 +18,16 @@ import type {
   InventoryLot,
   InventoryOptions,
   InventoryProduct,
+  ProductCategory,
   RegistrationState,
 } from "@/lib/types";
 const initial: RegistrationState = {};
+const productUnits = [
+  ["UNIDAD", "Unidad"], ["G", "Gramo (g)"], ["KG", "Kilogramo (kg)"],
+  ["ML", "Mililitro (ml)"], ["L", "Litro (l)"], ["CM", "Centímetro (cm)"],
+  ["M", "Metro (m)"], ["PAR", "Par"], ["PAQUETE", "Paquete"],
+] as const;
+const presentations = ["Unidad", "Frasco", "Pote", "Tubo", "Caja", "Bolsa", "Paquete", "Rollo", "Kit"];
 function Dialog({
   close,
   title,
@@ -66,21 +74,86 @@ function Error({ state, name }: { state: RegistrationState; name: string }) {
     <small className="session-error">{state.fieldErrors[name]}</small>
   ) : null;
 }
+function ProductImageField({ item, state }: { item?: InventoryProduct; state: RegistrationState }) {
+  const [preview, setPreview] = useState<string>();
+  const [clientError, setClientError] = useState("");
+  useEffect(() => () => {
+    if (preview) URL.revokeObjectURL(preview);
+  }, [preview]);
+
+  const source = preview || (item?.imagen_url ? `/api/inventory/products/${item.id_producto}/image` : undefined);
+  return (
+    <label className="inventory-product-image session-wide">
+      <span>Imagen del producto</span>
+      <div className="inventory-product-image__content">
+        <span className="inventory-product-image__preview">
+          {source ? <Image src={source} alt={`Vista previa de ${item?.nombre ?? "producto"}`} width={116} height={116} unoptimized /> : <BoxIcon />}
+        </span>
+        <span className="inventory-product-image__copy">
+          <strong>{source ? "Cambiar imagen" : "Seleccionar imagen"}</strong>
+          <small>JPG, JPEG, PNG o WEBP · Máximo 5 MB.</small>
+          <em>Se convertirá automáticamente a WebP al guardar.</em>
+          <span><UploadIcon />{source ? "Elegir otra imagen" : "Elegir imagen"}</span>
+        </span>
+      </div>
+      <input
+        name="imagen"
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        onChange={(event) => {
+          const file = event.currentTarget.files?.[0];
+          setClientError("");
+          if (preview) URL.revokeObjectURL(preview);
+          if (!file) return setPreview(undefined);
+          if (file.size > 5 * 1024 * 1024) {
+            event.currentTarget.value = "";
+            setPreview(undefined);
+            return setClientError("La imagen no puede superar los 5 MB.");
+          }
+          if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+            event.currentTarget.value = "";
+            setPreview(undefined);
+            return setClientError("Usa una imagen JPG, JPEG, PNG o WEBP.");
+          }
+          setPreview(URL.createObjectURL(file));
+        }}
+      />
+      {(clientError || state.fieldErrors?.imagen) && <small className="session-error">{clientError || state.fieldErrors?.imagen}</small>}
+    </label>
+  );
+}
 function ProductForm({
   item,
+  categories,
   close,
 }: {
   item?: InventoryProduct;
+  categories: ProductCategory[];
   close: () => void;
 }) {
   const [state, action, pending] = useActionState(
     saveProduct.bind(null, item?.id_producto ?? null),
     initial,
   );
+  const [isSupply, setIsSupply] = useState(item?.es_insumo ?? true);
+  const [isSellable, setIsSellable] = useState(item?.es_vendible ?? false);
+  const availableCategories = categories.filter((category) => category.estado === "ACTIVO" || category.id_categoria_producto === item?.id_categoria_producto);
+  const hasLegacyUnit = Boolean(item?.unidad_medida && !productUnits.some(([value]) => value === item.unidad_medida));
+  const hasLegacyPresentation = Boolean(item?.presentacion && !presentations.includes(item.presentacion));
   return (
     <>
       <form action={action} className="session-form">
-        <div className="session-grid">
+        <div className="session-grid inventory-product-form">
+          <h3 className="session-wide">Identificación del producto</h3>
+          <ProductImageField item={item} state={state} />
+          <label>
+            <span>Categoría *</span>
+            <select name="id_categoria_producto" defaultValue={item?.id_categoria_producto ?? ""} required>
+              <option value="">Seleccionar categoría</option>
+              {availableCategories.map((category) => <option key={category.id_categoria_producto} value={category.id_categoria_producto}>{category.nombre}</option>)}
+            </select>
+            <Error state={state} name="id_categoria_producto" />
+          </label>
           <label>
             <span>Nombre *</span>
             <input
@@ -92,43 +165,16 @@ function ProductForm({
             <Error state={state} name="nombre" />
           </label>
           <label>
-            <span>Unidad de medida *</span>
-            <input
-              name="unidad_medida"
-              defaultValue={item?.unidad_medida ?? ""}
-              maxLength={30}
-              placeholder="unidad, ml, g..."
-              required
-            />
-            <Error state={state} name="unidad_medida" />
+            <span>Marca</span>
+            <input name="marca" defaultValue={item?.marca ?? ""} maxLength={100} placeholder="Ej. Nivea, Warmi, Genérico" />
           </label>
           <label>
-            <span>Stock mínimo *</span>
-            <input
-              name="stock_minimo"
-              type="number"
-              min="0"
-              step="0.01"
-              defaultValue={item ? String(item.stock_minimo) : "0"}
-              required
-            />
-            <Error state={state} name="stock_minimo" />
+            <span>SKU / código interno</span>
+            <input name="sku" defaultValue={item?.sku ?? ""} maxLength={80} placeholder="Ej. CRE-HID-100" />
           </label>
           <label>
-            <span>Estado</span>
-            <select name="estado" defaultValue={item?.estado ?? "ACTIVO"}>
-              <option value="ACTIVO">Activo</option>
-              <option value="BAJA">Baja</option>
-            </select>
-          </label>
-          <label className="session-wide">
-            <span>URL de imagen</span>
-            <input
-              name="imagen_url"
-              type="url"
-              maxLength={500}
-              defaultValue={item?.imagen_url ?? ""}
-            />
+            <span>Código de barras</span>
+            <input name="codigo_barras" defaultValue={item?.codigo_barras ?? ""} maxLength={80} inputMode="numeric" placeholder="Escanea o escribe el código" />
           </label>
           <label className="session-wide">
             <span>Descripción</span>
@@ -139,30 +185,72 @@ function ProductForm({
               defaultValue={item?.descripcion ?? ""}
             />
           </label>
+          <h3 className="session-wide">Presentación y control de stock</h3>
+          <label>
+            <span>Unidad base *</span>
+            <select name="unidad_medida" defaultValue={item?.unidad_medida ?? "UNIDAD"} required>
+              {hasLegacyUnit && <option value={item!.unidad_medida}>{item!.unidad_medida} (valor anterior)</option>}
+              {productUnits.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            </select>
+            <small className="inventory-field-help">Unidad real en la que se controla y descuenta el stock.</small>
+            <Error state={state} name="unidad_medida" />
+          </label>
+          <label>
+            <span>Presentación *</span>
+            <select name="presentacion" defaultValue={item?.presentacion ?? "Unidad"} required>
+              {hasLegacyPresentation && <option value={item!.presentacion}>{item!.presentacion}</option>}
+              {presentations.map((value) => <option key={value} value={value}>{value}</option>)}
+            </select>
+          </label>
+          <label>
+            <span>Contenido por presentación *</span>
+            <input name="contenido_presentacion" type="number" min="0.001" step="0.001" defaultValue={item?.contenido_presentacion ?? 1} required />
+            <small className="inventory-field-help">Ej. un pote de 100 g: contenido 100 y unidad base Gramo.</small>
+            <Error state={state} name="contenido_presentacion" />
+          </label>
+          <label>
+            <span>Stock mínimo *</span>
+            <input name="stock_minimo" type="number" min="0" step="0.01" defaultValue={item ? String(item.stock_minimo) : "0"} required />
+            <small className="inventory-field-help">Solo genera una alerta; el stock se carga desde lotes.</small>
+            <Error state={state} name="stock_minimo" />
+          </label>
+          <h3 className="session-wide">Uso y venta</h3>
           <div className="inventory-checks session-wide">
             <label>
               <input
                 type="checkbox"
                 name="es_insumo"
-                defaultChecked={item?.es_insumo ?? true}
+                checked={isSupply}
+                onChange={(event) => setIsSupply(event.target.checked)}
               />
-              <span>Es insumo para tratamientos</span>
+              <span><strong>Insumo para tratamientos</strong><small>Puede registrarse como consumo durante una sesión.</small></span>
             </label>
             <label>
               <input
                 type="checkbox"
                 name="es_vendible"
-                defaultChecked={item?.es_vendible ?? false}
+                checked={isSellable}
+                onChange={(event) => setIsSellable(event.target.checked)}
               />
-              <span>Se puede vender</span>
+              <span><strong>Producto para venta</strong><small>Puede incluirse en una nota de venta.</small></span>
             </label>
           </div>
+          <Error state={state} name="es_insumo" />
+          {isSellable && <label>
+            <span>Precio de venta (Bs) *</span>
+            <input name="precio_venta" type="number" min="0" step="0.01" defaultValue={item?.precio_venta ?? ""} required />
+            <Error state={state} name="precio_venta" />
+          </label>}
+          {item && <label>
+            <span>Estado</span>
+            <select name="estado" defaultValue={item.estado}><option value="ACTIVO">Activo</option><option value="BAJA">Baja</option></select>
+          </label>}
         </div>
         <footer>
           <button type="button" onClick={close}>
             Cancelar
           </button>
-          <button className="directory-primary" disabled={pending}>
+          <button className="directory-primary" disabled={pending || availableCategories.length === 0}>
             {pending
               ? "Guardando..."
               : item
@@ -181,7 +269,7 @@ function ProductForm({
     </>
   );
 }
-export function ProductDialog({ item }: { item?: InventoryProduct }) {
+export function ProductDialog({ item, categories, emptyState = false }: { item?: InventoryProduct; categories: ProductCategory[]; emptyState?: boolean }) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -200,16 +288,16 @@ export function ProductDialog({ item }: { item?: InventoryProduct }) {
           onClick={() => setOpen(true)}
         >
           <PlusIcon />
-          Nuevo producto
+          {emptyState ? "Registrar primer producto" : "Nuevo producto"}
         </button>
       )}
       {open && (
         <Dialog
           close={() => setOpen(false)}
           title={item ? "Editar producto" : "Nuevo producto"}
-          description="Registra únicamente la información disponible en el catálogo de inventario."
+          description="Define su identidad, presentación y uso. Las existencias se administran desde lotes."
         >
-          <ProductForm item={item} close={() => setOpen(false)} />
+          <ProductForm item={item} categories={categories} close={() => setOpen(false)} />
         </Dialog>
       )}
     </>

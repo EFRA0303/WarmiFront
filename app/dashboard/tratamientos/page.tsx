@@ -80,7 +80,7 @@ export default async function TreatmentsPage({ searchParams }: PageProps) {
         {canCreate && <NewTreatmentDialog options={optionsResult.value} />}
       </header>
 
-      <DirectoryTableActions scope="treatments" fileName="tratamientos-warmi" columns={columns} showActions={showActions} />
+      <DirectoryTableActions scope="treatments" fileName="tratamientos" columns={columns} showActions={showActions} />
 
       <div className="directory-toolbar">
         <form action="/dashboard/tratamientos" method="get">

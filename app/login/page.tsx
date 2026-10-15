@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
+import type { CSSProperties } from "react";
 import { redirect } from "next/navigation";
 import { Brand } from "@/components/brand";
-import { CalendarIcon, TreatmentIcon, UsersIcon } from "@/components/icons";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { getCurrentUser } from "@/lib/auth";
+import { getPublicCompanyIdentity } from "@/lib/public-company";
+import { CompanyLogo } from "./company-logo";
 import { LoginForm } from "./login-form";
 import "./login.css";
 
@@ -11,68 +12,105 @@ export const metadata: Metadata = {
   title: "Iniciar sesión",
 };
 
-const highlights = [
-  { icon: UsersIcon, label: "Pacientes", text: "Información centralizada" },
-  {
-    icon: TreatmentIcon,
-    label: "Tratamientos",
-    text: "Seguimiento personalizado",
-  },
-  { icon: CalendarIcon, label: "Organización", text: "Tu operación en orden" },
-];
+function splitTagline(tagline: string) {
+  const separator = tagline.indexOf(",");
+  if (separator < 0) return { lead: tagline, accent: "" };
+  return {
+    lead: tagline.slice(0, separator + 1).trim(),
+    accent: tagline.slice(separator + 1).trim(),
+  };
+}
+
+function splitLoginTitle(title: string) {
+  const words = title.trim().split(/\s+/);
+  if (words.length < 3) {
+    return { lead: words.slice(0, -1).join(" "), accent: words.at(-1) ?? title };
+  }
+  return {
+    lead: words.slice(0, -2).join(" "),
+    accent: words.slice(-2).join(" "),
+  };
+}
 
 export default async function LoginPage() {
   const user = await getCurrentUser();
   if (user) redirect("/dashboard");
+  const company = await getPublicCompanyIdentity();
+  const tagline = splitTagline(company.tagline);
+  const loginTitle = splitLoginTitle(company.loginTitle);
+  const heroStyle = company.hasLoginBackground
+    ? ({
+        "--login-background-image":
+          "url('/api/company-brand/login-background')",
+      } as CSSProperties)
+    : undefined;
+  const panelStyle = company.hasLoginPanelBackground
+    ? ({
+        "--login-panel-background-image":
+          "url('/api/company-brand/login-panel-background')",
+      } as CSSProperties)
+    : undefined;
 
   return (
     <main className="login-shell">
-      <section className="login-hero">
+      <section
+        className={`login-hero${company.hasLoginBackground ? " login-hero--branded" : ""}`}
+        style={heroStyle}
+      >
         <div className="hero-glow hero-glow--one" />
         <div className="hero-glow hero-glow--two" />
         <div className="hero-grid" />
 
         <div className="hero-content">
-          <Brand inverse />
+          <Brand
+            inverse
+            name={company.name}
+            subtitle="Estética & bienestar"
+            logoSrc={company.hasLogo ? "/api/company-brand/logo" : undefined}
+          />
           <div className="hero-message">
-            <span className="hero-eyebrow">BIENESTAR QUE SE GESTIONA</span>
-            <h1>Cuidar de cada paciente comienza con una mejor organización.</h1>
-            <p>
-              Gestiona tratamientos, historias y seguimiento desde un espacio
-              pensado para acompañar el bienestar de tus pacientes.
-            </p>
+            <span className="hero-eyebrow">TU BIENESTAR, NUESTRA PASIÓN</span>
+            <h1>
+              <span>{tagline.lead}</span>
+              {tagline.accent && <em>{tagline.accent}</em>}
+            </h1>
+            {company.shortDescription && <p>{company.shortDescription}</p>}
           </div>
-          <div className="hero-highlights">
-            {highlights.map(({ icon: Icon, label, text }) => (
-              <article key={label} className="hero-highlight">
-                <span>
-                  <Icon />
-                </span>
-                <div>
-                  <strong>{label}</strong>
-                  <small>{text}</small>
-                </div>
-              </article>
-            ))}
-          </div>
-          <p className="hero-footer">Warmi Spa · Cuidado con propósito</p>
         </div>
       </section>
 
-      <section className="login-panel">
-        <ThemeToggle className="login-theme-toggle" />
+      <section
+        className={`login-panel${company.hasLoginPanelBackground ? " login-panel--branded" : ""}`}
+        style={panelStyle}
+      >
+        <span className="login-panel__leaf login-panel__leaf--top" aria-hidden="true" />
+        <span className="login-panel__leaf login-panel__leaf--bottom" aria-hidden="true" />
         <div className="mobile-brand">
-          <Brand />
+          <Brand
+            name={company.name}
+            subtitle="Gestión integral"
+            logoSrc={company.hasLogo ? "/api/company-brand/logo" : undefined}
+          />
         </div>
         <div className="login-card">
           <div className="login-heading">
+            {company.hasLogo && (
+              <CompanyLogo companyName={company.name} />
+            )}
             <span className="welcome-pill">
               <span /> Bienvenido de vuelta
             </span>
-            <h2>Ingresa a tu espacio</h2>
-            <p>Usa tus credenciales para continuar en Warmi.</p>
+            <h2>
+              {loginTitle.lead}{" "}
+              <em>{loginTitle.accent}</em>
+            </h2>
+            <p>
+              Usa tus credenciales para continuar en{" "}
+              <strong>{company.name}</strong>.
+            </p>
           </div>
           <LoginForm />
+          <div className="login-divider" aria-hidden="true"><span>✦</span></div>
           <div className="login-security">
             <span aria-hidden="true">✓</span>
             <p>
@@ -80,9 +118,6 @@ export default async function LoginPage() {
             </p>
           </div>
         </div>
-        <p className="login-help">
-          ¿Necesitas ayuda para ingresar? <strong>Contacta al administrador</strong>
-        </p>
       </section>
     </main>
   );

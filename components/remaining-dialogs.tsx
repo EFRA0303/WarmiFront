@@ -11,7 +11,6 @@ import {
   BoxIcon,
   CheckIcon,
   CloseIcon,
-  EditIcon,
   PlusIcon,
 } from "@/components/icons";
 import { SubmissionResultDialog } from "@/components/submission-result-dialog";
@@ -20,12 +19,10 @@ import {
   createAcquisition,
   createConsumption,
   createSaleOutput,
-  saveCompany,
 } from "@/app/dashboard/operaciones/actions";
 import type {
   Acquisition,
   AcquisitionOptions,
-  Company,
   InventoryOperationOptions,
   RegistrationState,
 } from "@/lib/types";
@@ -61,7 +58,7 @@ function Dialog({
             <BoxIcon />
           </span>
           <div>
-            <b className="page-eyebrow">GESTIÓN WARMI</b>
+            <b className="page-eyebrow">GESTIÓN INTEGRAL</b>
             <h2>{title}</h2>
             <p>{description}</p>
           </div>
@@ -192,6 +189,8 @@ export function AcquisitionDialog({
                         type="number"
                         min="0"
                         step="0.01"
+                        value={Number(s.precio).toFixed(2)}
+                        readOnly
                         required
                       />
                       <Error state={state} name={`price_${i}`} />
@@ -409,94 +408,6 @@ export function StockOperationDialog({
               onSuccess={() => setOpen(false)}
             />
           )}
-        </Dialog>
-      )}
-    </>
-  );
-}
-function CompanyForm({ item, close }: { item?: Company; close: () => void }) {
-  const [state, action, pending] = useActionState(
-    saveCompany.bind(null, item?.id_empresa ?? null),
-    initial,
-  );
-  return (
-    <>
-      <form action={action} className="session-form">
-        <div className="session-grid">
-          {[
-            ["nombre_comercial", "Nombre comercial *"],
-            ["razon_social", "Razón social"],
-            ["telefono1", "Teléfono principal"],
-            ["telefono2", "Teléfono alternativo"],
-            ["correo", "Correo"],
-            ["direccion", "Dirección"],
-            ["sitio_web", "Sitio web"],
-            ["logo_url", "URL del logo"],
-            ["moneda", "Moneda"],
-          ].map(([name, label]) => (
-            <label key={name}>
-              <span>{label}</span>
-              <input
-                name={name}
-                type={
-                  name === "correo"
-                    ? "email"
-                    : name.includes("url") || name === "sitio_web"
-                      ? "url"
-                      : "text"
-                }
-                defaultValue={String(
-                  item?.[name as keyof Company] ??
-                    (name === "moneda" ? "BOB" : ""),
-                )}
-              />
-              <Error state={state} name={name} />
-            </label>
-          ))}
-          <label>
-            <span>Estado</span>
-            <select name="estado" defaultValue={item?.estado ?? "ACTIVO"}>
-              <option value="ACTIVO">Activo</option>
-              <option value="BAJA">Baja</option>
-            </select>
-          </label>
-        </div>
-        <footer>
-          <button type="button" onClick={close}>
-            Cancelar
-          </button>
-          <button className="directory-primary" disabled={pending}>
-            {pending ? "Guardando..." : "Guardar empresa"}
-          </button>
-        </footer>
-      </form>
-      {state.resultId && (
-        <SubmissionResultDialog state={state} onSuccess={close} />
-      )}
-    </>
-  );
-}
-export function CompanyDialog({ item }: { item?: Company }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      {item ? (
-        <button onClick={() => setOpen(true)} title="Editar">
-          <EditIcon />
-        </button>
-      ) : (
-        <button className="directory-primary" onClick={() => setOpen(true)}>
-          <PlusIcon />
-          Nueva empresa
-        </button>
-      )}
-      {open && (
-        <Dialog
-          close={() => setOpen(false)}
-          title={item ? "Editar empresa" : "Registrar empresa"}
-          description="Información comercial y de contacto."
-        >
-          <CompanyForm item={item} close={() => setOpen(false)} />
         </Dialog>
       )}
     </>

@@ -1,0 +1,157 @@
+.hours-page { container: hours / inline-size; }
+.hours-card { overflow: hidden; border: 1px solid var(--border); border-radius: 25px; background: var(--surface); font-size: 1rem; line-height: 1.5; box-shadow: 0 20px 60px rgba(3, 35, 31, .07); }
+.hours-card .page-eyebrow { font-size: .72rem; line-height: 1.4; }
+.hours-card .directory-primary { min-height: 44px; font-size: .74rem; }
+.hours-heading { display: flex; align-items: center; gap: 16px; padding: 26px 30px; border-bottom: 1px solid var(--border); background: linear-gradient(120deg, var(--surface), color-mix(in srgb, var(--primary) 5%, var(--surface))); }
+.hours-heading__icon { display: grid; width: 55px; height: 55px; flex: 0 0 auto; place-items: center; border-radius: 17px; background: var(--primary-soft); color: var(--primary-strong); }
+.hours-heading__icon svg { width: 25px; }
+.hours-heading h1 { margin: 5px 0 6px; font-size: clamp(1.6rem, 3vw, 2.15rem); letter-spacing: -.04em; }
+.hours-heading p { margin: 0; color: var(--muted); font-size: .88rem; line-height: 1.55; }
+.hours-layout { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(310px, .75fr); gap: 28px; padding: 30px; }
+.hours-settings { min-width: 0; }
+.hours-section-title { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.hours-section-title > span { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 11px; background: var(--primary-soft); color: var(--primary-strong); font-size: .76rem; font-weight: 850; }
+.hours-section-title h2 { margin: 0 0 3px; font-size: 1rem; }
+.hours-section-title p { margin: 0; color: var(--muted); font-size: .76rem; }
+.hours-section-title--days { margin-top: 31px; padding-top: 27px; border-top: 1px solid var(--border); }
+.hours-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 13px; }
+.hours-fields label { display: flex; min-width: 0; flex-direction: column; gap: 7px; }
+.hours-fields label > span { color: var(--muted); font-size: .76rem; font-weight: 750; }
+.hours-fields input, .hours-fields select { width: 100%; height: 47px; padding: 0 13px; border: 1px solid var(--border); border-radius: 13px; outline: 0; background: var(--background); color: var(--foreground); font: inherit; font-size: .84rem; }
+.hours-fields input:focus, .hours-fields select:focus { border-color: var(--primary); box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 10%, transparent); }
+.hours-days { display: grid; grid-template-columns: repeat(7, minmax(64px, 1fr)); gap: 8px; }
+.hours-days label { display: flex; min-height: 86px; cursor: pointer; align-items: center; justify-content: center; flex-direction: column; gap: 7px; border: 1px solid var(--border); border-radius: 14px; background: var(--background); transition: 150ms ease; }
+.hours-days label:hover { border-color: var(--primary); transform: translateY(-1px); }
+.hours-days label.active { border-color: color-mix(in srgb, var(--primary) 65%, var(--border)); background: var(--primary-soft); }
+.hours-days input { position: absolute; opacity: 0; }
+.hours-days label > span { display: grid; width: 20px; height: 20px; place-items: center; border: 1px solid var(--border); border-radius: 7px; color: var(--primary-contrast); }
+.hours-days label.active > span { border-color: var(--primary); background: var(--primary); }
+.hours-days svg { width: 12px; }
+.hours-days div { text-align: center; }
+.hours-days strong, .hours-days small { display: block; }
+.hours-days strong { font-size: .78rem; }
+.hours-days small { margin-top: 2px; color: var(--muted); font-size: .65rem; }
+.hours-field-error { color: var(--danger); font-size: .72rem; }
+.hours-preview { min-width: 0; padding: 22px; border: 1px solid color-mix(in srgb, var(--primary) 25%, var(--border)); border-radius: 20px; background: linear-gradient(160deg, var(--background), color-mix(in srgb, var(--primary) 5%, var(--surface))); }
+.hours-preview__heading { display: flex; align-items: center; justify-content: space-between; }
+.hours-preview__heading span { color: var(--primary-strong); font-size: .72rem; font-weight: 850; letter-spacing: .09em; text-transform: uppercase; }
+.hours-preview__heading strong { padding: 5px 9px; border-radius: 999px; background: var(--primary-soft); color: var(--primary-strong); font-size: .68rem; }
+.hours-preview h2 { margin: 17px 0 5px; font-size: 1.1rem; }
+.hours-preview > p { margin: 0; color: var(--muted); font-size: .76rem; line-height: 1.55; }
+.hours-preview__slots { max-height: 310px; margin-top: 18px; overflow: auto; padding-right: 5px; }
+.hours-preview__slots > div { display: grid; grid-template-columns: 48px 1fr 62px; align-items: center; gap: 9px; min-height: 39px; }
+.hours-preview__slots time { color: var(--muted); font-size: .73rem; font-weight: 720; }
+.hours-preview__slots span { height: 1px; background: var(--border); }
+.hours-preview__slots small { color: var(--subtle); font-size: .65rem; }
+.hours-preview__slots .edge time, .hours-preview__slots .edge small { color: var(--primary-strong); font-weight: 800; }
+.hours-preview__slots .edge span { background: var(--primary); }
+.hours-preview__slots em { color: var(--danger); font-size: .75rem; }
+.hours-preview__summary { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 17px; padding-top: 15px; border-top: 1px solid var(--border); }
+.hours-preview__summary span { padding: 10px; border-radius: 11px; background: var(--surface); color: var(--muted); font-size: .69rem; text-align: center; }
+.hours-preview__summary b { display: block; margin-bottom: 3px; color: var(--foreground); font-size: .88rem; }
+.hours-footer { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 20px 30px; border-top: 1px solid var(--border); background: var(--surface-soft); }
+.hours-footer p { max-width: 650px; margin: 0; color: var(--muted); font-size: .76rem; line-height: 1.55; }
+@media (max-width: 950px) { .hours-layout { grid-template-columns: 1fr; } .hours-preview { max-width: 560px; } }
+@media (max-width: 700px) { .hours-heading, .hours-layout, .hours-footer { padding-right: 18px; padding-left: 18px; } .hours-fields { grid-template-columns: 1fr; } .hours-days { grid-template-columns: repeat(4, 1fr); } .hours-footer { align-items: stretch; flex-direction: column; } }
+
+.hours-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 22px; padding: 18px 30px; border-bottom: 1px solid var(--border); background: var(--surface-soft); }
+.hours-toolbar label { display: flex; min-width: 220px; flex-direction: column; gap: 6px; }
+.hours-toolbar label > span { color: var(--muted); font-size: .75rem; font-weight: 760; }
+.hours-toolbar select { height: 44px; padding: 0 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--background); color: var(--foreground); font: inherit; font-size: .82rem; }
+.hours-toolbar > div { display: flex; max-width: 610px; flex-direction: column; gap: 3px; color: var(--muted); font-size: .75rem; line-height: 1.55; }
+.hours-toolbar b { color: var(--foreground); font-size: .8rem; }
+.hours-content { padding: 30px; }
+.hours-content--exceptions { border-top: 1px solid var(--border); background: color-mix(in srgb, var(--surface-soft) 55%, transparent); }
+.hours-content--holidays { border-top: 1px solid var(--border); }
+.hours-section-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; margin-bottom: 20px; }
+.hours-section-heading h2 { margin: 7px 0 4px; font-size: 1.35rem; letter-spacing: -.025em; }
+.hours-section-heading p { margin: 0; color: var(--muted); font-size: .8rem; line-height: 1.5; }
+.hours-copy { min-height: 42px; cursor: pointer; padding: 0 14px; border: 1px solid var(--border); border-radius: 11px; background: var(--background); color: var(--primary-strong); font-size: .73rem; font-weight: 760; }
+.hours-copy:hover { border-color: var(--primary); }
+.hours-week { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.hours-day { overflow: hidden; border: 1px solid var(--border); border-radius: 16px; background: var(--background); }
+.hours-day.open { border-color: color-mix(in srgb, var(--primary) 34%, var(--border)); }
+.hours-day > header { display: flex; min-height: 66px; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 15px; background: var(--surface-soft); }
+.hours-day > header div { display: flex; flex-direction: column; gap: 3px; }
+.hours-day > header strong { font-size: .87rem; }
+.hours-day > header small { color: var(--muted); font-size: .68rem; }
+.hours-switch { cursor: pointer; }
+.hours-switch input { position: absolute; opacity: 0; }
+.hours-switch > span { display: grid; width: 35px; height: 21px; place-items: center; border: 1px solid var(--border); border-radius: 999px; background: var(--background); color: white; transition: 150ms ease; }
+.hours-switch input:checked + span { justify-content: end; padding-right: 3px; border-color: var(--primary); background: var(--primary); }
+.hours-switch svg { width: 13px; }
+.hours-day__ranges, .hours-exception__ranges { display: flex; flex-direction: column; gap: 8px; padding: 13px; }
+.hours-gap-reason { display: grid; grid-template-columns: auto minmax(180px, 1fr); align-items: end; gap: 12px; margin: 5px 0; padding: 9px 11px; border: 1px solid color-mix(in srgb, #eab308 45%, var(--border)); border-radius: 11px; background: color-mix(in srgb, #facc15 10%, var(--surface)); }
+.hours-gap-reason > span { display: flex; min-height: 38px; align-items: center; gap: 6px; color: #b77900; font-size: .7rem; font-weight: 800; white-space: nowrap; }
+.hours-gap-reason > span svg { width: 14px; }
+.hours-gap-reason label { display: flex; min-width: 0; flex-direction: column; gap: 4px; }
+.hours-gap-reason label > span { color: var(--muted); font-size: .65rem; font-weight: 700; }
+.hours-gap-reason input { width: 100%; height: 40px; padding: 0 10px; border: 1px solid color-mix(in srgb, #eab308 32%, var(--border)); border-radius: 9px; outline: 0; background: var(--background); color: var(--foreground); font: inherit; font-size: .76rem; }
+.hours-gap-reason input:focus { border-color: #eab308; box-shadow: 0 0 0 3px color-mix(in srgb, #eab308 13%, transparent); }
+.hours-range { display: grid; grid-template-columns: minmax(105px, 1fr) auto minmax(105px, 1fr) 32px; align-items: end; gap: 8px; }
+.hours-range label { display: flex; min-width: 0; flex-direction: column; gap: 5px; }
+.hours-range label > span, .hours-exception__main label > span { color: var(--muted); font-size: .67rem; font-weight: 740; }
+.hours-range input, .hours-exception__main input, .hours-exception__main select { width: 100%; height: 42px; padding: 0 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--foreground); font: inherit; font-size: .78rem; }
+.hours-range i { padding-bottom: 11px; color: var(--subtle); font-size: .65rem; font-style: normal; }
+.hours-range > button, .hours-exception__main > button { display: grid; width: 32px; height: 32px; cursor: pointer; place-items: center; align-self: end; margin-bottom: 3px; border: 1px solid var(--border); border-radius: 9px; background: transparent; color: var(--danger); }
+.hours-range > button svg, .hours-exception__main > button svg { width: 14px; }
+.hours-add-range { display: inline-flex; width: fit-content; min-height: 36px; cursor: pointer; align-items: center; gap: 6px; padding: 0 11px; border: 0; border-radius: 9px; background: var(--primary-soft); color: var(--primary-strong); font-size: .7rem; font-weight: 760; }
+.hours-add-range svg { width: 13px; }
+.hours-exceptions { display: flex; flex-direction: column; gap: 12px; }
+.hours-exception { overflow: hidden; border: 1px solid var(--border); border-left: 4px solid var(--danger); border-radius: 15px; background: var(--background); }
+.hours-exception--horario_especial { border-left-color: var(--primary); }
+.hours-exception__main { display: grid; grid-template-columns: 150px 180px minmax(180px, 1fr) 36px; align-items: end; gap: 10px; padding: 14px; }
+.hours-exception__main label { display: flex; min-width: 0; flex-direction: column; gap: 5px; }
+.hours-exception__ranges { padding-top: 0; border-top: 1px dashed var(--border); }
+.hours-empty { display: grid; min-height: 180px; place-items: center; padding: 25px; border: 1px dashed var(--border); border-radius: 17px; color: var(--muted); text-align: center; }
+.hours-empty svg { width: 28px; color: var(--primary); }
+.hours-empty h3 { margin: 8px 0 0; color: var(--foreground); font-size: .96rem; }
+.hours-empty p { max-width: 450px; margin: -4px 0 0; font-size: .76rem; line-height: 1.55; }
+.hours-holiday-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.hours-holiday-actions button { display: inline-flex; align-items: center; gap: 6px; }
+.hours-holiday-actions svg { width: 14px; }
+.hours-holiday-groups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 16px; }
+.hours-holiday-group { overflow: hidden; min-width: 0; border: 1px solid var(--border); border-radius: 18px; background: color-mix(in srgb, var(--surface-soft) 55%, var(--background)); }
+.hours-holiday-group--fijo { border-top: 3px solid var(--primary); }
+.hours-holiday-group--dinamico { border-top: 3px solid #e5a20b; }
+.hours-holiday-group__header { display: flex; min-height: 104px; align-items: center; justify-content: space-between; gap: 14px; padding: 15px 17px; border-bottom: 1px solid var(--border); }
+.hours-holiday-group__header > div { min-width: 0; }
+.hours-holiday-group__header span { color: var(--primary-strong); font-size: .65rem; font-weight: 850; letter-spacing: .08em; }
+.hours-holiday-group--dinamico .hours-holiday-group__header span { color: #b27300; }
+.hours-holiday-group__header h3 { margin: 3px 0; font-size: 1rem; }
+.hours-holiday-group__header p { margin: 0; color: var(--muted); font-size: .72rem; line-height: 1.45; }
+.hours-holiday-group__header > b { display: grid; width: 31px; height: 31px; flex: 0 0 auto; place-items: center; border-radius: 999px; background: var(--primary-soft); color: var(--primary-strong); font-size: .72rem; }
+.hours-holiday-group--dinamico .hours-holiday-group__header > b { background: color-mix(in srgb, #f59e0b 14%, transparent); color: #b27300; }
+.hours-holiday-group__empty { padding: 25px 17px; color: var(--muted); font-size: .75rem; text-align: center; }
+.hours-holiday-months { display: flex; flex-direction: column; gap: 12px; padding: 12px; }
+.hours-holiday-month { overflow: hidden; border: 1px solid var(--border); border-radius: 16px; background: var(--background); }
+.hours-holiday-month > header { display: flex; min-height: 49px; align-items: center; justify-content: space-between; padding: 0 15px; border-bottom: 1px solid var(--border); background: var(--surface-soft); }
+.hours-holiday-month > header strong { font-size: .87rem; }
+.hours-holiday-month > header span { display: grid; width: 26px; height: 26px; place-items: center; border-radius: 999px; background: var(--primary-soft); color: var(--primary-strong); font-size: .68rem; font-weight: 800; }
+.hours-holiday-month > div { display: flex; flex-direction: column; }
+.hours-holiday { display: grid; grid-template-columns: minmax(140px, 1fr) 116px 105px 34px; align-items: end; gap: 8px; padding: 12px; border-bottom: 1px solid var(--border); }
+.hours-holiday--dinamico { grid-template-columns: minmax(130px, 1fr) 116px 96px 76px 34px; }
+.hours-holiday:last-child { border-bottom: 0; }
+.hours-holiday > label, .hours-holiday__field { display: flex; min-width: 0; flex-direction: column; gap: 5px; }
+.hours-holiday > label > span, .hours-holiday__field > span { color: var(--muted); font-size: .65rem; font-weight: 720; }
+.hours-holiday input, .hours-holiday select { width: 100%; height: 41px; padding: 0 9px; border: 1px solid var(--border); border-radius: 9px; outline: 0; background: var(--surface); color: var(--foreground); font: inherit; font-size: .75rem; }
+.hours-holiday input:focus, .hours-holiday select:focus { border-color: var(--primary); }
+.hours-holiday__day-label { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+.hours-holiday__day-label b { padding: 2px 5px; border-radius: 999px; background: var(--primary-soft); color: var(--primary-strong); font-size: .57rem; }
+.hours-holiday__day-control { display: grid; grid-template-columns: minmax(0, 1fr) 39px; gap: 5px; }
+.hours-holiday__calendar { position: relative; display: grid; width: 39px; height: 41px; cursor: pointer; place-items: center; overflow: hidden; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); color: var(--primary-strong); }
+.hours-holiday__calendar:hover, .hours-holiday__calendar:focus-within { border-color: var(--primary); background: var(--primary-soft); }
+.hours-holiday__calendar svg { width: 17px; pointer-events: none; }
+.hours-holiday .hours-holiday__calendar-input { position: absolute; inset: 0; width: 100%; height: 100%; cursor: pointer; opacity: 0; padding: 0; border: 0; }
+.hours-holiday > button { display: grid; width: 32px; height: 32px; cursor: pointer; place-items: center; align-self: end; margin-bottom: 2px; border: 1px solid var(--border); border-radius: 9px; background: transparent; color: var(--danger); }
+.hours-holiday > button svg { width: 14px; }
+.hours-form-error { margin: 0 30px 16px; padding: 11px 13px; border: 1px solid color-mix(in srgb, var(--danger) 30%, var(--border)); border-radius: 11px; background: var(--danger-soft); color: var(--danger); font-size: .76rem; }
+@media (max-width: 900px) { .hours-week { grid-template-columns: 1fr; } .hours-exception__main { grid-template-columns: 1fr 1fr; } .hours-exception__reason { grid-column: 1 / -1; } }
+@media (max-width: 1100px) { .hours-holiday-groups { grid-template-columns: 1fr; } }
+@media (max-width: 620px) { .hours-toolbar, .hours-section-heading { align-items: stretch; flex-direction: column; } .hours-content, .hours-toolbar { padding-right: 18px; padding-left: 18px; } .hours-exception__main { grid-template-columns: 1fr; } .hours-range { grid-template-columns: 1fr auto 1fr 32px; } }
+@media (max-width: 620px) { .hours-gap-reason { grid-template-columns: 1fr; } }
+@media (max-width: 700px) { .hours-holiday, .hours-holiday--dinamico { grid-template-columns: 1fr 1fr; } .hours-holiday__name { grid-column: 1 / -1; } .hours-holiday > button { justify-self: end; } }
+@container hours (max-width: 900px) { .hours-week, .hours-holiday-groups { grid-template-columns: 1fr; } .hours-exception__main { grid-template-columns: 1fr 1fr; } .hours-exception__reason { grid-column: 1 / -1; } }
+@container hours (max-width: 650px) { .hours-toolbar, .hours-section-heading { align-items: stretch; flex-direction: column; } .hours-content, .hours-toolbar { padding-right: 18px; padding-left: 18px; } .hours-exception__main { grid-template-columns: 1fr; } .hours-gap-reason { grid-template-columns: 1fr; } .hours-holiday, .hours-holiday--dinamico { grid-template-columns: 1fr 1fr; } .hours-holiday__name { grid-column: 1 / -1; } .hours-holiday > button { justify-self: end; } }
+@container hours (max-width: 500px) { .hours-heading { align-items: flex-start; padding-right: 18px; padding-left: 18px; } .hours-range { grid-template-columns: minmax(0, 1fr) 32px; } .hours-range > i { display: none; } .hours-range > label:first-child { grid-column: 1 / -1; } .hours-range > label:nth-of-type(2) { grid-column: 1; } .hours-range > button { grid-column: 2; grid-row: 2; } .hours-holiday-group__header { align-items: flex-start; } }
+.hours-range--general { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }

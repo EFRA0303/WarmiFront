@@ -47,12 +47,12 @@ export async function createTreatment(
   _previous: RegistrationState,
   formData: FormData,
 ): Promise<RegistrationState> {
-  const idHistorial = positiveInteger(formData, "id_historial");
+  const idPaciente = positiveInteger(formData, "id_paciente");
   const idServicio = positiveInteger(formData, "id_servicio");
   const indicadoPor = positiveInteger(formData, "indicado_por");
   const sesiones = positiveInteger(formData, "sesiones_iniciales");
   const fieldErrors: Record<string, string> = {};
-  if (!idHistorial) fieldErrors.id_historial = "Selecciona un paciente.";
+  if (!idPaciente) fieldErrors.id_paciente = "Selecciona un paciente.";
   if (!idServicio) fieldErrors.id_servicio = "Selecciona un servicio.";
   if (!indicadoPor) fieldErrors.indicado_por = "Selecciona al profesional.";
   if (!sesiones) fieldErrors.sesiones_iniciales = "Ingresa una cantidad válida.";
@@ -60,7 +60,7 @@ export async function createTreatment(
 
   const idDetalle = positiveInteger(formData, "id_detalle_adquisicion");
   const result = await mutate("/clinica/tratamientos", "POST", {
-    id_historial: idHistorial,
+    id_paciente: idPaciente,
     id_servicio: idServicio,
     indicado_por: indicadoPor,
     id_detalle_adquisicion: idDetalle,

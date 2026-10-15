@@ -3,10 +3,12 @@
 import type { ComponentType, ReactNode, SVGProps } from "react";
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useSearchParams } from "next/navigation";
 import { logoutAction } from "@/app/actions/auth";
 import { Brand } from "@/components/brand";
 import { AccountMenu } from "@/components/account-menu";
+import { CurrentUserAvatar } from "@/components/current-user-avatar";
 import {
   BoxIcon,
   BriefcaseIcon,
@@ -25,7 +27,8 @@ import {
 } from "@/components/icons";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { PresenceHeartbeat } from "@/components/presence-heartbeat";
-import type { CurrentUser } from "@/lib/types";
+import type { CompanyBranding, CurrentUser } from "@/lib/types";
+import { isConfigurationAdmin } from "@/lib/configuration-access";
 import "./dashboard-shell.css";
 
 type NavIcon = ComponentType<SVGProps<SVGSVGElement>>;
@@ -38,6 +41,7 @@ type NavItem = {
   anyPermissions?: string[];
   soon?: boolean;
   exact?: boolean;
+  adminOnly?: boolean;
   children?: NavItem[];
 };
 
@@ -72,6 +76,7 @@ const navigation: NavItem[] = [
   },
   {
     label: "Personal", icon: BriefcaseIcon, anyPermissions: ["personal.leer", "disponibilidad.leer"],
+    adminOnly: true,
     children: [
       { label: "Lista de empleados", href: "/dashboard/personal", permission: "personal.leer", exact: true },
       {
@@ -85,20 +90,11 @@ const navigation: NavItem[] = [
     ],
   },
   {
-    label: "Catálogo", icon: SettingsIcon, permission: "catalogo.leer",
-    children: [
-      { label: "Áreas", href: "/dashboard/servicios?tab=structure" },
-      { label: "Categorías", href: "/dashboard/servicios?tab=structure" },
-      { label: "Servicios", href: "/dashboard/servicios?tab=services" },
-      { label: "Tipos de medida", href: "/dashboard/servicios?tab=measures" },
-    ],
-  },
-  {
     label: "Paquetes y promociones", icon: BoxIcon,
     anyPermissions: ["comercial.leer", "adquisiciones.leer"],
     children: [
-      { label: "Paquetes", href: "/dashboard/paquetes", permission: "comercial.leer" },
-      { label: "Promociones", href: "/dashboard/promociones", permission: "comercial.leer" },
+      { label: "Paquetes", href: "/dashboard/paquetes", permission: "comercial.leer", adminOnly: true },
+      { label: "Promociones", href: "/dashboard/promociones", permission: "comercial.leer", adminOnly: true },
       { label: "Adquisiciones de pacientes", href: "/dashboard/adquisiciones", permission: "adquisiciones.leer" },
     ],
   },
@@ -109,20 +105,38 @@ const navigation: NavItem[] = [
   {
     label: "Inventario", icon: BoxIcon, permission: "inventario.leer",
     children: [
-      { label: "Productos", href: "/dashboard/inventario/productos" },
-      { label: "Lotes y existencias", href: "/dashboard/inventario/lotes" },
-      { label: "Movimientos", href: "/dashboard/inventario/movimientos" },
+      { label: "Productos", href: "/dashboard/inventario/productos", adminOnly: true },
+      { label: "Lotes y existencias", href: "/dashboard/inventario/lotes", adminOnly: true },
+      { label: "Movimientos", href: "/dashboard/inventario/movimientos", adminOnly: true },
       { label: "Consumos por sesión", href: "/dashboard/inventario/consumos" },
       { label: "Salidas por venta", href: "/dashboard/inventario/salidas-venta" },
     ],
   },
   {
     label: "Administración", icon: UserSettingsIcon,
-    anyPermissions: ["usuarios.leer", "roles.leer", "permisos.leer", "empresa.leer"],
+    adminOnly: true,
+    anyPermissions: ["usuarios.leer", "roles.leer", "permisos.leer"],
     children: [
       { label: "Usuarios", href: "/dashboard/usuarios", permission: "usuarios.leer" },
       { label: "Roles y permisos", href: "/dashboard/sistema/roles-permisos", permissions: ["roles.leer", "permisos.leer"] },
+    ],
+  },
+  {
+    label: "Configuración", icon: SettingsIcon,
+    adminOnly: true,
+    anyPermissions: ["empresa.leer", "catalogo.leer"],
+    children: [
       { label: "Empresa", href: "/dashboard/empresa", permission: "empresa.leer" },
+      { label: "Horarios de atención", href: "/dashboard/horarios-atencion", permission: "empresa.leer" },
+      {
+        label: "Catálogo", permission: "catalogo.leer",
+        children: [
+          { label: "Área y categoría", href: "/dashboard/servicios?tab=structure" },
+          { label: "Servicios", href: "/dashboard/servicios?tab=services" },
+          { label: "Tipos de medida", href: "/dashboard/servicios?tab=measures" },
+          { label: "Categorías de productos", href: "/dashboard/servicios?tab=product-categories" },
+        ],
+      },
       { label: "Configuración de documentos", href: "/dashboard/documentos", permission: "empresa.leer" },
     ],
   },
@@ -133,12 +147,13 @@ const navigation: NavItem[] = [
       { label: "Auditoría del sistema", href: "/dashboard/seguridad/auditoria", permission: "auditoria.leer" },
       { label: "Historial de accesos", href: "/dashboard/seguridad/accesos", permission: "accesos-usuario.leer" },
       { label: "Usuarios conectados", href: "/dashboard/seguridad/conectados", permission: "usuarios.leer" },
-      { label: "Configuración de auditoría", href: "/dashboard/seguridad/configuracion", permission: "configuracion-auditoria.leer" },
+      { label: "Configuración de auditoría", href: "/dashboard/seguridad/configuracion", permission: "configuracion-auditoria.leer", adminOnly: true },
     ],
   },
 ];
 
-function itemVisible(item: NavItem, permissions: string[]) {
+function itemVisible(item: NavItem, permissions: string[], configurationAdmin: boolean) {
+  if (item.adminOnly && !configurationAdmin) return false;
   if (item.permission && !permissions.includes(item.permission)) return false;
   if (item.permissions && !item.permissions.every((permission) => permissions.includes(permission))) return false;
   if (item.anyPermissions && !item.anyPermissions.some((permission) => permissions.includes(permission))) return false;
@@ -160,12 +175,12 @@ function branchActive(item: NavItem, pathname: string, currentSearch: string): b
   return item.children?.some((child) => branchActive(child, pathname, currentSearch)) ?? false;
 }
 
-function NavigationBranch({ item, pathname, currentSearch, permissions, depth = 0, closeMenu }: { item: NavItem; pathname: string; currentSearch: string; permissions: string[]; depth?: number; closeMenu: () => void }) {
-  const visibleChildren = item.children?.filter((child) => itemVisible(child, permissions)) ?? [];
+function NavigationBranch({ item, pathname, currentSearch, permissions, configurationAdmin, depth = 0, closeMenu }: { item: NavItem; pathname: string; currentSearch: string; permissions: string[]; configurationAdmin: boolean; depth?: number; closeMenu: () => void }) {
+  const visibleChildren = item.children?.filter((child) => itemVisible(child, permissions, configurationAdmin)) ?? [];
   const active = branchActive(item, pathname, currentSearch);
   const [expanded, setExpanded] = useState(active || depth === 0 && item.label === "Inicio");
   const opened = expanded;
-  if (!itemVisible(item, permissions)) return null;
+  if (!itemVisible(item, permissions, configurationAdmin)) return null;
   if (item.children && visibleChildren.length === 0) return null;
   const Icon = item.icon;
 
@@ -174,7 +189,7 @@ function NavigationBranch({ item, pathname, currentSearch, permissions, depth = 
       <button type="button" className="nav-branch__trigger" aria-expanded={opened} onClick={() => setExpanded((value) => !value)}>
         {Icon && <Icon />}<span>{item.label}</span><ChevronRightIcon className={`nav-branch__chevron${opened ? " expanded" : ""}`} />
       </button>
-      {opened && <div className="nav-branch__children">{visibleChildren.map((child, index) => <NavigationBranch key={`${child.label}-${index}`} item={child} pathname={pathname} currentSearch={currentSearch} permissions={permissions} depth={depth + 1} closeMenu={closeMenu} />)}</div>}
+      {opened && <div className="nav-branch__children">{visibleChildren.map((child, index) => <NavigationBranch key={`${child.label}-${index}`} item={child} pathname={pathname} currentSearch={currentSearch} permissions={permissions} configurationAdmin={configurationAdmin} depth={depth + 1} closeMenu={closeMenu} />)}</div>}
     </div>;
   }
 
@@ -207,6 +222,7 @@ const pageTitles: Record<string, string> = {
   "/dashboard/inventario/consumos": "Consumos por sesión",
   "/dashboard/inventario/salidas-venta": "Salidas por venta",
   "/dashboard/empresa": "Empresa",
+  "/dashboard/horarios-atencion": "Horarios de atención",
   "/dashboard/documentos": "Configuración de documentos",
   "/dashboard/seguridad/auditoria": "Auditoría del sistema",
   "/dashboard/seguridad/accesos": "Historial de accesos",
@@ -220,11 +236,22 @@ const pageTitles: Record<string, string> = {
 export function DashboardShell({
   children,
   user,
+  company,
 }: {
   children: ReactNode;
   user: CurrentUser;
+  company: CompanyBranding;
 }) {
   const pathname = usePathname();
+  const configurationSection = pathname === "/dashboard/empresa"
+    ? "Empresa"
+    : pathname === "/dashboard/horarios-atencion"
+      ? "Horarios de atención"
+    : pathname === "/dashboard/servicios"
+      ? "Catálogo"
+      : pathname === "/dashboard/documentos"
+        ? "Documentos"
+        : null;
   const currentSearch = useSearchParams().toString();
   const [menuOpen, setMenuOpen] = useState(false);
   const fullName = [
@@ -234,7 +261,7 @@ export function DashboardShell({
   ]
     .filter(Boolean)
     .join(" ");
-  const displayName = fullName || user.nombre_usuario || "Usuario Warmi";
+  const displayName = fullName || user.nombre_usuario || `Usuario ${company.name}`;
   const initials = [user.persona?.nombre, user.persona?.ap_paterno]
     .filter(Boolean)
     .map((part) => part![0])
@@ -253,7 +280,12 @@ export function DashboardShell({
 
       <aside className={`app-sidebar ${menuOpen ? "app-sidebar--open" : ""}`}>
         <div className="sidebar-brand-row">
-          <Brand inverse />
+          <Brand
+            inverse
+            name={company.name}
+            subtitle="Gestión integral"
+            logoSrc={company.hasLogo ? "/api/company-brand/logo" : undefined}
+          />
           <button
             type="button"
             className="sidebar-close"
@@ -265,11 +297,11 @@ export function DashboardShell({
         </div>
 
         <nav className="sidebar-nav" aria-label="Navegación principal">
-          {navigation.map((item) => <NavigationBranch key={`${item.label}-${pathname}`} item={item} pathname={pathname} currentSearch={currentSearch} permissions={user.permisos} closeMenu={() => setMenuOpen(false)} />)}
+          {navigation.map((item) => <NavigationBranch key={`${item.label}-${pathname}`} item={item} pathname={pathname} currentSearch={currentSearch} permissions={user.permisos} configurationAdmin={isConfigurationAdmin(user)} closeMenu={() => setMenuOpen(false)} />)}
         </nav>
 
         <div className="sidebar-profile">
-          <span className="sidebar-avatar">{initials || "WU"}</span>
+          <CurrentUserAvatar hasPhoto={Boolean(user.foto_perfil_ruta)} photoKey={user.foto_perfil_ruta} initials={initials} className="sidebar-avatar" />
           <span>
             <strong>{displayName}</strong>
             <small>{user.rol?.nombre || "Sin rol asignado"}</small>
@@ -278,8 +310,23 @@ export function DashboardShell({
       </aside>
 
       <div className="app-workspace">
+        <header className="print-brand-header">
+          {company.hasLogo && (
+            <Image
+              src="/api/company-brand/logo"
+              alt={`Logo de ${company.name}`}
+              width={64}
+              height={64}
+              unoptimized
+            />
+          )}
+          <div>
+            <strong>{company.name}</strong>
+            <span>{company.shortDescription}</span>
+          </div>
+        </header>
         <header className="app-topbar">
-          <div className={`topbar-title${pathname === "/dashboard/agenda" ? " topbar-title--prominent" : ""}`}>
+          <div className={`topbar-title${pathname === "/dashboard/agenda" ? " topbar-title--prominent" : ""}${configurationSection ? " topbar-title--configuration" : ""}`}>
             <button
               type="button"
               className="menu-button"
@@ -289,8 +336,17 @@ export function DashboardShell({
               <MenuIcon />
             </button>
             <div>
-              {pathname !== "/dashboard/agenda" && <span>Warmi Spa</span>}
-              <strong>{pageTitles[pathname] || "Administración"}</strong>
+              {configurationSection ? (
+                <>
+                  <strong>Configuración</strong>
+                  <span>{configurationSection}</span>
+                </>
+              ) : (
+                <>
+                  {pathname !== "/dashboard/agenda" && <span>{company.name}</span>}
+                  <strong>{pageTitles[pathname] || "Administración"}</strong>
+                </>
+              )}
             </div>
           </div>
 

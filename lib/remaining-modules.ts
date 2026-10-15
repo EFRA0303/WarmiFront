@@ -6,7 +6,7 @@ import type {
   AcquisitionOptions,
   AcquisitionStatus,
   Company,
-  GeneralStatus,
+  CurrencyOption,
   InventoryOperationOptions,
   PaginatedResponse,
   StockOperation,
@@ -76,5 +76,6 @@ export const getCompanies = (p: {
   page: number;
   limit: number;
   search?: string;
-  estado?: GeneralStatus;
 }) => request<PaginatedResponse<Company>>(`/empresa?${q(p)}`);
+export const getCurrencies = () =>
+  request<CurrencyOption[]>("/empresa/monedas/listar");

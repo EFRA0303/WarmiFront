@@ -1,15 +1,18 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { getPublicCompanyIdentity } from "@/lib/public-company";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: {
-    default: "Warmi Spa | Gestión integral",
-    template: "%s | Warmi Spa",
-  },
-  description:
-    "Sistema de gestión de pacientes y tratamientos corporales de Warmi Spa.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const company = await getPublicCompanyIdentity();
+  return {
+    title: {
+      default: `${company.name} | Gestión integral`,
+      template: `%s | ${company.name}`,
+    },
+    description: company.shortDescription,
+  };
+}
 
 const themeScript = `
   try {

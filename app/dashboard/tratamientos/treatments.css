@@ -59,6 +59,16 @@
 .treatment-form-grid__wide { grid-column: 1 / -1; }
 .treatment-field-error { color: var(--danger); font-size: .65rem; }
 .treatment-field-help { color: var(--muted); font-size: .62rem; }
+.treatment-patient-search { position: relative; }
+.treatment-patient-search > input[type="search"] { width: 100%; }
+.treatment-patient-search > input[aria-invalid="true"] { border-color: var(--danger); }
+.treatment-patient-search__options { position: absolute; z-index: 12; top: calc(100% + 7px); right: 0; left: 0; max-height: 230px; overflow-y: auto; padding: 6px; border: 1px solid var(--border); border-radius: 13px; background: var(--surface); box-shadow: 0 18px 45px rgb(3 24 22 / 24%); }
+.treatment-patient-search__options button { display: flex; width: 100%; flex-direction: column; gap: 3px; padding: 10px 11px; cursor: pointer; border: 0; border-radius: 9px; background: transparent; color: var(--foreground); text-align: left; }
+.treatment-patient-search__options button:hover,
+.treatment-patient-search__options button[aria-selected="true"] { background: var(--primary-soft); color: var(--primary-strong); }
+.treatment-patient-search__options button strong { font-size: .78rem; }
+.treatment-patient-search__options button small { color: var(--muted); font-size: .66rem; }
+.treatment-patient-search__options p { margin: 0; padding: 13px 11px; color: var(--muted); font-size: .72rem; text-align: center; }
 .treatment-form > footer,
 .treatment-confirm footer { display: flex; justify-content: flex-end; gap: 9px; margin-top: 20px; padding-top: 17px; border-top: 1px solid var(--border); }
 .treatment-secondary,

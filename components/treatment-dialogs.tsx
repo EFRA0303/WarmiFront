@@ -37,6 +37,13 @@ function fullName(person: { nombre: string; ap_paterno: string; ap_materno: stri
   return [person.nombre, person.ap_paterno, person.ap_materno].filter(Boolean).join(" ");
 }
 
+function normalizeSearch(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("es");
+}
+
 function DialogFrame({
   open,
   onClose,
@@ -80,11 +87,91 @@ function FieldError({ state, name }: { state: RegistrationState; name: string })
   return state.fieldErrors?.[name] ? <small className="treatment-field-error">{state.fieldErrors[name]}</small> : null;
 }
 
+function PatientSearch({
+  patients,
+  value,
+  onChange,
+  hasError,
+}: {
+  patients: TreatmentOptions["patients"];
+  value: string;
+  onChange: (value: string) => void;
+  hasError: boolean;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const filteredPatients = useMemo(() => {
+    const search = normalizeSearch(query.trim());
+    if (!search) return patients;
+    return patients.filter((patient) =>
+      normalizeSearch(`${fullName(patient)} ${patient.ci ?? ""}`).includes(search),
+    );
+  }, [patients, query]);
+
+  useEffect(() => {
+    function closeOptions(event: PointerEvent) {
+      if (event.target instanceof Node && !containerRef.current?.contains(event.target)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("pointerdown", closeOptions);
+    return () => document.removeEventListener("pointerdown", closeOptions);
+  }, []);
+
+  return (
+    <div className="treatment-patient-search" ref={containerRef}>
+      <input
+        type="search"
+        value={query}
+        placeholder="Buscar por nombre, apellido, carnet o CI..."
+        autoComplete="off"
+        required
+        role="combobox"
+        aria-autocomplete="list"
+        aria-expanded={open}
+        aria-controls="treatment-patient-options"
+        aria-invalid={hasError}
+        onFocus={() => setOpen(true)}
+        onChange={(event) => {
+          setQuery(event.target.value);
+          onChange("");
+          setOpen(true);
+        }}
+      />
+      <input type="hidden" name="id_paciente" value={value} />
+      {open && (
+        <div className="treatment-patient-search__options" id="treatment-patient-options" role="listbox">
+          {filteredPatients.length ? filteredPatients.map((patient) => {
+            const name = fullName(patient);
+            return (
+              <button
+                type="button"
+                role="option"
+                aria-selected={value === String(patient.id_paciente)}
+                key={patient.id_paciente}
+                onClick={() => {
+                  onChange(String(patient.id_paciente));
+                  setQuery(`${name}${patient.ci ? ` · CI ${patient.ci}` : ""}`);
+                  setOpen(false);
+                }}
+              >
+                <strong>{name}</strong>
+                <small>{patient.ci ? `CI ${patient.ci}` : "Sin CI registrado"}</small>
+              </button>
+            );
+          }) : <p>No encontramos pacientes con ese nombre o CI.</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CreateForm({ options, onClose }: { options: TreatmentOptions; onClose: () => void }) {
   const [state, action, pending] = useActionState(createTreatment, initialState);
   const [patientId, setPatientId] = useState("");
   const [serviceId, setServiceId] = useState("");
-  const selectedPatient = options.patients.find((patient) => patient.id_historial === Number(patientId));
+  const selectedPatient = options.patients.find((patient) => patient.id_paciente === Number(patientId));
   const acquisitions = useMemo(
     () => options.acquisitions.filter((item) =>
       (!selectedPatient || item.id_paciente === selectedPatient.id_paciente) &&
@@ -95,9 +182,9 @@ function CreateForm({ options, onClose }: { options: TreatmentOptions; onClose: 
   return (
     <>
       <form action={action} className="treatment-form">
-        {!ready && <div className="treatment-setup-alert">Antes de crear un tratamiento debe existir al menos un paciente con historial, un servicio activo y un profesional clínico activo.</div>}
+        {!ready && <div className="treatment-setup-alert">Antes de crear un tratamiento debe existir al menos un paciente activo, un servicio activo y un profesional clínico activo.</div>}
         <div className="treatment-form-grid">
-          <label><span>Paciente *</span><select name="id_historial" required value={patientId} onChange={(event) => setPatientId(event.target.value)}><option value="">Seleccionar paciente</option>{options.patients.map((patient) => <option key={patient.id_historial} value={patient.id_historial}>{fullName(patient)}{patient.ci ? ` · CI ${patient.ci}` : ""}</option>)}</select><FieldError state={state} name="id_historial" /></label>
+          <label><span>Paciente *</span><PatientSearch patients={options.patients} value={patientId} onChange={setPatientId} hasError={Boolean(state.fieldErrors?.id_paciente)} /><FieldError state={state} name="id_paciente" /></label>
           <label><span>Servicio *</span><select name="id_servicio" required value={serviceId} onChange={(event) => setServiceId(event.target.value)}><option value="">Seleccionar servicio</option>{options.services.map((service) => <option key={service.id_servicio} value={service.id_servicio}>{service.nombre} · {service.duracion_minutos} min</option>)}</select><FieldError state={state} name="id_servicio" /></label>
           <label><span>Indicado por *</span><select name="indicado_por" required defaultValue=""><option value="">Seleccionar profesional</option>{options.staff.map((staff) => <option key={staff.id_personal} value={staff.id_personal}>{fullName(staff)} · {staff.cargo}</option>)}</select><FieldError state={state} name="indicado_por" /></label>
           <label><span>Sesiones iniciales *</span><input name="sesiones_iniciales" type="number" min="1" max="999" required /><FieldError state={state} name="sesiones_iniciales" /></label>

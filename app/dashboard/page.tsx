@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { CalendarIcon, TreatmentIcon, UsersIcon } from "@/components/icons";
 import { getCurrentUser } from "@/lib/auth";
+import { getPublicCompanyIdentity } from "@/lib/public-company";
 import "./dashboard.css";
 
 export const metadata: Metadata = {
@@ -10,7 +11,10 @@ export const metadata: Metadata = {
 };
 
 export default async function DashboardPage() {
-  const user = await getCurrentUser();
+  const [user, company] = await Promise.all([
+    getCurrentUser(),
+    getPublicCompanyIdentity(),
+  ]);
   if (!user) redirect("/login");
 
   const fullName = [
@@ -29,7 +33,7 @@ export default async function DashboardPage() {
           <h1>Hola, {user.persona?.nombre || "bienvenido"}.</h1>
           <p>
             Tu espacio de gestión está listo. Consulta los usuarios y continúa
-            organizando la operación de Warmi desde un solo lugar.
+            organizando la operación de {company.name} desde un solo lugar.
           </p>
         </div>
         <span className="session-status">
@@ -73,7 +77,7 @@ export default async function DashboardPage() {
       <section className="profile-card">
         <div>
           <span className="profile-card__label">CUENTA CONECTADA</span>
-          <h2>{fullName || user.nombre_usuario || "Usuario Warmi"}</h2>
+          <h2>{fullName || user.nombre_usuario || `Usuario ${company.name}`}</h2>
           <p>{user.correo_acceso}</p>
         </div>
         <div className="profile-meta">

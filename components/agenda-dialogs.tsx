@@ -62,6 +62,58 @@ function localDateTime(value?: string | null) {
   return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
 }
 
+const weekdayByIndex = ["DOMINGO", "LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO"] as const;
+
+function timeMinutes(value: string) {
+  const [hours, minutes] = value.split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
+function businessRangesForDate(date: string, options: AgendaOptions) {
+  const exception = options.businessHours.excepciones.find((item) => item.fecha === date);
+  if (exception?.tipo === "HORARIO_ESPECIAL") return exception.tramos;
+  if (exception?.tipo === "CERRADO") return [];
+  const month = Number(date.slice(5, 7));
+  const day = Number(date.slice(8, 10));
+  const holiday = options.businessHours.feriados.some((item) => item.tipo === "DINAMICO" ? item.fecha === date : item.mes === month && item.dia === day);
+  if (holiday) return [];
+  const weekday = weekdayByIndex[new Date(`${date}T12:00:00Z`).getUTCDay()];
+  return options.businessHours.horarios_semanales.filter((item) => item.dia_semana === weekday);
+}
+
+function staffRangesForDate(staffId: number, date: string, options: AgendaOptions) {
+  const weekday = weekdayByIndex[new Date(`${date}T12:00:00Z`).getUTCDay()];
+  return [
+    ...options.staffSchedules.filter((item) => item.id_personal === staffId && item.dia_semana === weekday),
+    ...(options.staffExtraSchedules ?? []).filter((item) => item.id_personal === staffId && item.fecha.slice(0, 10) === date),
+  ];
+}
+
+function staffAvailableForRange(staffId: number, start: string, end: string, options: AgendaOptions) {
+  if (!start || !end || start.slice(0, 10) !== end.slice(0, 10)) return false;
+  const date = start.slice(0, 10);
+  const startTime = start.slice(11, 16);
+  const endTime = end.slice(11, 16);
+  const insideBusinessHours = businessRangesForDate(date, options).some((range) => startTime >= range.hora_inicio && endTime <= range.hora_fin);
+  if (!insideBusinessHours) return false;
+  const insideStaffHours = staffRangesForDate(staffId, date, options).some((range) => startTime >= range.hora_inicio && endTime <= range.hora_fin);
+  if (!insideStaffHours) return false;
+  const startInstant = new Date(`${start}:00-04:00`);
+  const endInstant = new Date(`${end}:00-04:00`);
+  return !(options.staffBlocks ?? []).some((block) => block.id_personal === staffId && new Date(block.fecha_hora_inicio) < endInstant && new Date(block.fecha_hora_fin) > startInstant);
+}
+
+function openingTime(date: string, options: AgendaOptions) {
+  const businessRanges = businessRangesForDate(date, options);
+  const candidates = options.staff.flatMap((staff) => staffRangesForDate(staff.id_personal, date, options).flatMap((staffRange) => businessRanges.flatMap((businessRange) => {
+    const start = Math.max(timeMinutes(staffRange.hora_inicio), timeMinutes(businessRange.hora_inicio));
+    const end = Math.min(timeMinutes(staffRange.hora_fin), timeMinutes(businessRange.hora_fin));
+    return end > start ? [start] : [];
+  })));
+  const first = candidates.length ? Math.min(...candidates) : businessRanges[0] ? timeMinutes(businessRanges[0].hora_inicio) : 540;
+  return `${String(Math.floor(first / 60)).padStart(2, "0")}:${String(first % 60).padStart(2, "0")}`;
+}
+
 function DialogFrame({
   open,
   onClose,
@@ -138,17 +190,18 @@ function AppointmentFields({
   const [sessionNumber, setSessionNumber] = useState(
     String(appointment?.numero_sesion ?? defaultTreatment?.siguiente_sesion ?? ""),
   );
+  const [staffId, setStaffId] = useState(String(appointment?.id_personal ?? ""));
   const initialStart = appointment
     ? localDateTime(appointment.fecha_hora_inicio)
     : defaultDate
-      ? `${defaultDate}T09:00`
+      ? `${defaultDate}T${openingTime(defaultDate, options)}`
       : "";
   const initialEnd = appointment
     ? localDateTime(appointment.fecha_hora_fin)
     : defaultDate
       ? (() => {
-          const start = new Date(`${defaultDate}T09:00:00-04:00`);
-          start.setMinutes(start.getMinutes() + (defaultTreatment?.duracion_minutos ?? 60));
+          const start = new Date(`${defaultDate}T${openingTime(defaultDate, options)}:00-04:00`);
+          start.setMinutes(start.getMinutes() + (defaultTreatment?.duracion_minutos ?? options.businessHours.intervalo_minutos));
           return localDateTime(start.toISOString());
         })()
       : "";
@@ -161,14 +214,18 @@ function AppointmentFields({
       ),
     [options.treatments, patientId],
   );
+  const selectedStaffAvailable = staffId ? staffAvailableForRange(Number(staffId), start, end, options) : null;
 
   function calculateEnd(nextStart: string, nextTreatment: string) {
     const treatment = options.treatments.find(
       (item) => item.id_tratamiento === Number(nextTreatment),
     );
-    if (!nextStart || !treatment) return;
+    if (!nextStart) return;
     const date = new Date(`${nextStart}:00-04:00`);
-    date.setMinutes(date.getMinutes() + treatment.duracion_minutos);
+    date.setMinutes(
+      date.getMinutes() +
+        (treatment?.duracion_minutos ?? options.businessHours.intervalo_minutos),
+    );
     setEnd(localDateTime(date.toISOString()));
   }
 
@@ -197,14 +254,16 @@ function AppointmentFields({
       </label>
       <label>
         <span>Profesional *</span>
-        <select name="id_personal" defaultValue={appointment?.id_personal ?? ""} required>
+        <select name="id_personal" value={staffId} onChange={(event) => setStaffId(event.target.value)} required>
           <option value="">Seleccionar profesional</option>
-          {options.staff.map((staff) => (
-            <option key={staff.id_personal} value={staff.id_personal}>
-              {fullName(staff)} · {staff.profesion}
+          {options.staff.map((staff) => {
+            const available = !start || !end || staffAvailableForRange(staff.id_personal, start, end, options);
+            return <option key={staff.id_personal} value={staff.id_personal} disabled={!available && staff.id_personal !== Number(staffId)}>
+              {fullName(staff)} · {staff.profesion}{available ? "" : " · No disponible"}
             </option>
-          ))}
+          })}
         </select>
+        {selectedStaffAvailable !== null && <small className={`agenda-availability-hint ${selectedStaffAvailable ? "available" : "unavailable"}`}>{selectedStaffAvailable ? "Disponible en el horario seleccionado" : "No disponible en el horario seleccionado"}</small>}
         <FieldError state={state} name="id_personal" />
       </label>
       <label>
@@ -248,6 +307,7 @@ function AppointmentFields({
           name="fecha_hora_inicio"
           type="datetime-local"
           value={start}
+          step={options.businessHours.intervalo_minutos * 60}
           required
           onChange={(event) => {
             setStart(event.target.value);
@@ -262,6 +322,7 @@ function AppointmentFields({
           name="fecha_hora_fin"
           type="datetime-local"
           value={end}
+          step={options.businessHours.intervalo_minutos * 60}
           required
           onChange={(event) => setEnd(event.target.value)}
         />
@@ -350,7 +411,7 @@ export function NewAppointmentDialog({
   );
 }
 
-function ReprogramForm({ appointment, onClose }: { appointment: AppointmentListItem; onClose: () => void }) {
+function ReprogramForm({ appointment, options, onClose }: { appointment: AppointmentListItem; options: AgendaOptions; onClose: () => void }) {
   const [state, action, pending] = useActionState(
     reprogramAppointment.bind(null, appointment.id_cita),
     initialState,
@@ -359,8 +420,8 @@ function ReprogramForm({ appointment, onClose }: { appointment: AppointmentListI
     <>
       <form action={action} className="agenda-form">
         <div className="agenda-form-grid">
-          <label><span>Nuevo inicio *</span><input name="inicio_nuevo" type="datetime-local" defaultValue={localDateTime(appointment.fecha_hora_inicio)} required /><FieldError state={state} name="inicio_nuevo" /></label>
-          <label><span>Nuevo final *</span><input name="fin_nuevo" type="datetime-local" defaultValue={localDateTime(appointment.fecha_hora_fin)} required /><FieldError state={state} name="fin_nuevo" /></label>
+          <label><span>Nuevo inicio *</span><input name="inicio_nuevo" type="datetime-local" step={options.businessHours.intervalo_minutos * 60} defaultValue={localDateTime(appointment.fecha_hora_inicio)} required /><FieldError state={state} name="inicio_nuevo" /></label>
+          <label><span>Nuevo final *</span><input name="fin_nuevo" type="datetime-local" step={options.businessHours.intervalo_minutos * 60} defaultValue={localDateTime(appointment.fecha_hora_fin)} required /><FieldError state={state} name="fin_nuevo" /></label>
           <label><span>Solicitado por *</span><select name="solicitado_por_tipo" defaultValue="PACIENTE"><option value="PACIENTE">Paciente</option><option value="PERSONAL">Personal</option><option value="SISTEMA">Sistema</option></select><FieldError state={state} name="solicitado_por_tipo" /></label>
           <label className="agenda-form-grid__wide"><span>Motivo</span><textarea name="motivo" rows={3} maxLength={255} /><FieldError state={state} name="motivo" /></label>
         </div>
@@ -397,7 +458,7 @@ export function AppointmentActions({ appointment, options }: { appointment: Appo
         <AppointmentForm options={options} appointment={appointment} onClose={() => setEditOpen(false)} />
       </DialogFrame>
       <DialogFrame open={reprogramOpen} onClose={() => setReprogramOpen(false)} eyebrow="CAMBIO DE HORARIO" title="Reprogramar cita" description="El horario anterior quedará registrado en el historial.">
-        <ReprogramForm appointment={appointment} onClose={() => setReprogramOpen(false)} />
+        <ReprogramForm appointment={appointment} options={options} onClose={() => setReprogramOpen(false)} />
       </DialogFrame>
       <SubmissionResultDialog state={result} onSuccess={() => setResult({})} />
     </>

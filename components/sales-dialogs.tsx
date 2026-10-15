@@ -74,6 +74,8 @@ function Error({ state, name }: { state: RegistrationState; name: string }) {
 export function NewSaleDialog({ options }: { options: SalesOptions }) {
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState([0]);
+  const [selectedItems, setSelectedItems] = useState<Record<number, string>>({});
+  const [prices, setPrices] = useState<Record<number, string>>({});
   const [state, action, pending] = useActionState(createSaleNote, initial);
   const [date] = useState(now);
   return (
@@ -166,11 +168,33 @@ export function NewSaleDialog({ options }: { options: SalesOptions }) {
               </button>
             </div>
             <div className="sale-details">
-              {rows.map((_, index) => (
+              {rows.map((_, index) => {
+                const selectedItem = options.items.find(
+                  (item) => `${item.tipo}:${item.id}` === selectedItems[index],
+                );
+                const fixedPrice = selectedItem?.precio !== undefined;
+                return (
                 <div className="sale-detail" key={index}>
                   <label>
                     <span>Concepto *</span>
-                    <select name={`item_${index}`} defaultValue="" required>
+                    <select
+                      name={`item_${index}`}
+                      value={selectedItems[index] ?? ""}
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        const item = options.items.find(
+                          (option) => `${option.tipo}:${option.id}` === value,
+                        );
+                        setSelectedItems((current) => ({ ...current, [index]: value }));
+                        setPrices((current) => ({
+                          ...current,
+                          [index]: item?.precio !== undefined
+                            ? Number(item.precio).toFixed(2)
+                            : "",
+                        }));
+                      }}
+                      required
+                    >
                       <option value="" disabled>
                         Seleccionar
                       </option>
@@ -204,6 +228,14 @@ export function NewSaleDialog({ options }: { options: SalesOptions }) {
                       type="number"
                       min="0"
                       step="0.01"
+                      value={prices[index] ?? ""}
+                      onChange={(event) =>
+                        setPrices((current) => ({
+                          ...current,
+                          [index]: event.target.value,
+                        }))
+                      }
+                      readOnly={fixedPrice}
                       required
                     />
                     <Error state={state} name={`precio_${index}`} />
@@ -232,7 +264,8 @@ export function NewSaleDialog({ options }: { options: SalesOptions }) {
                     </button>
                   )}
                 </div>
-              ))}
+                );
+              })}
             </div>
             <footer>
               <button type="button" onClick={() => setOpen(false)}>

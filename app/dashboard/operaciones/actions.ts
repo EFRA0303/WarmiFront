@@ -1,8 +1,9 @@
 "use server";
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
-import { getSessionToken } from "@/lib/auth";
+import { getCurrentUser, getSessionToken } from "@/lib/auth";
 import { backendUrl, readApiMessage } from "@/lib/backend";
+import { isConfigurationAdmin } from "@/lib/configuration-access";
 import type { AcquisitionStatus, RegistrationState } from "@/lib/types";
 const text = (d: FormData, n: string) => {
   const v = d.get(n);
@@ -163,6 +164,9 @@ export async function saveCompany(
   d: FormData,
 ): Promise<RegistrationState> {
   const name = text(d, "nombre_comercial");
+  const user = await getCurrentUser();
+  if (!isConfigurationAdmin(user))
+    return fail("Solo ROOT o ADMINISTRADOR puede modificar la empresa.");
   if (!name)
     return {
       fieldErrors: { nombre_comercial: "Ingresa el nombre comercial." },
@@ -170,25 +174,106 @@ export async function saveCompany(
   const body = {
     nombre_comercial: name,
     razon_social: text(d, "razon_social") || undefined,
+    nit: text(d, "nit") || undefined,
+    actividad_economica: text(d, "actividad_economica") || undefined,
     telefono1: text(d, "telefono1") || undefined,
     telefono2: text(d, "telefono2") || undefined,
     correo: text(d, "correo") || undefined,
     direccion: text(d, "direccion") || undefined,
     sitio_web: text(d, "sitio_web") || undefined,
-    logo_url: text(d, "logo_url") || undefined,
     moneda: text(d, "moneda") || "BOB",
-    estado: text(d, "estado") || "ACTIVO",
+    eslogan_principal: text(d, "eslogan_principal") || null,
+    titulo_login: text(d, "titulo_login") || null,
+    descripcion_corta: text(d, "descripcion_corta") || null,
   };
-  const r = await mutate(
-    id ? `/empresa/${id}` : "/empresa",
-    id ? "PATCH" : "POST",
-    body,
-  );
-  return (
-    r ??
-    done(
+  const token = await getSessionToken();
+  if (!token) return fail("La sesión venció.");
+  try {
+    const response = await fetch(backendUrl(id ? `/empresa/${id}` : "/empresa"), {
+      method: id ? "PATCH" : "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+      cache: "no-store",
+    });
+    if (!response.ok)
+      return fail((await readApiMessage(response)) || "No se pudo guardar la empresa.");
+    const saved = (await response.json()) as { id_empresa: number };
+    const companyId = id ?? saved.id_empresa;
+    const logo = d.get("logo");
+    if (logo instanceof File && logo.size > 0) {
+      if (logo.size > 5 * 1024 * 1024)
+        return { fieldErrors: { logo: "El logo no puede superar los 5 MB." } };
+      const upload = new FormData();
+      upload.set("logo", logo);
+      const logoResponse = await fetch(backendUrl(`/empresa/${companyId}/logo`), {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: upload,
+        cache: "no-store",
+      });
+      if (!logoResponse.ok)
+        return fail((await readApiMessage(logoResponse)) || "La empresa se guardó, pero no fue posible procesar el logo.");
+    }
+    const loginBackground = d.get("fondo_login");
+    if (loginBackground instanceof File && loginBackground.size > 0) {
+      if (loginBackground.size > 8 * 1024 * 1024)
+        return {
+          fieldErrors: {
+            fondo_login: "La imagen de fondo no puede superar los 8 MB.",
+          },
+        };
+      const upload = new FormData();
+      upload.set("fondo_login", loginBackground);
+      const backgroundResponse = await fetch(
+        backendUrl(`/empresa/${companyId}/fondo-login`),
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: upload,
+          cache: "no-store",
+        },
+      );
+      if (!backgroundResponse.ok)
+        return fail(
+          (await readApiMessage(backgroundResponse)) ||
+            "La empresa se guardó, pero no fue posible procesar el fondo del login.",
+        );
+    }
+    const loginPanelBackground = d.get("fondo_panel_login");
+    if (loginPanelBackground instanceof File && loginPanelBackground.size > 0) {
+      if (loginPanelBackground.size > 8 * 1024 * 1024)
+        return {
+          fieldErrors: {
+            fondo_panel_login: "La imagen de fondo no puede superar los 8 MB.",
+          },
+        };
+      const upload = new FormData();
+      upload.set("fondo_panel_login", loginPanelBackground);
+      const panelBackgroundResponse = await fetch(
+        backendUrl(`/empresa/${companyId}/fondo-panel-login`),
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: upload,
+          cache: "no-store",
+        },
+      );
+      if (!panelBackgroundResponse.ok)
+        return fail(
+          (await readApiMessage(panelBackgroundResponse)) ||
+            "La empresa se guardó, pero no fue posible procesar el fondo del panel de acceso.",
+        );
+    }
+    revalidatePath("/dashboard", "layout");
+    revalidatePath("/login");
+    return done(
       id ? "Empresa actualizada" : "Empresa registrada",
-      "La información comercial fue guardada.",
-    )
-  );
+      "La información comercial y fiscal fue guardada.",
+    );
+  } catch {
+    return fail("No pudimos conectar con el servidor.");
+  }
 }

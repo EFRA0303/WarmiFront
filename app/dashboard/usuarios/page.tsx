@@ -204,7 +204,7 @@ export default async function UsersPage({ searchParams }: PageProps) {
         <div>
           <span className="page-eyebrow">ADMINISTRACIÓN</span>
           <h1>Usuarios</h1>
-          <p>Consulta las cuentas, roles y estados de acceso de Warmi.</p>
+          <p>Consulta las cuentas, roles y estados de acceso del sistema.</p>
         </div>
         <div className="users-heading-actions">
           {canCreateUsers && <UserRegistrationDialog />}

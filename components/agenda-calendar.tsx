@@ -153,10 +153,134 @@ function initials(person: { nombre: string; ap_paterno: string }) {
   return `${person.nombre.charAt(0)}${person.ap_paterno.charAt(0)}`.toUpperCase();
 }
 
-const defaultDayStart = 7 * 60;
-const defaultDayEnd = 20 * 60;
-const slotMinutes = 30;
 const slotHeight = 48;
+
+const weekdayByIndex = [
+  "DOMINGO",
+  "LUNES",
+  "MARTES",
+  "MIERCOLES",
+  "JUEVES",
+  "VIERNES",
+  "SABADO",
+] as const;
+
+function timeMinutes(value: string) {
+  const [hours, minutes] = value.split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
+function holidayForDate(value: string, businessHours: AgendaOptions["businessHours"]) {
+  const month = Number(value.slice(5, 7)), day = Number(value.slice(8, 10));
+  return businessHours.feriados.find((item) => item.tipo === "DINAMICO" ? item.fecha === value : item.mes === month && item.dia === day);
+}
+
+function scheduleForDate(value: string, businessHours: AgendaOptions["businessHours"]) {
+  const exception = businessHours.excepciones.find((item) => item.fecha === value);
+  if (exception?.tipo === "HORARIO_ESPECIAL") return exception.tramos;
+  if (exception?.tipo === "CERRADO" || holidayForDate(value, businessHours)) return [];
+  const weekday = weekdayByIndex[dateAtNoon(value).getUTCDay()];
+  return businessHours.horarios_semanales.filter((item) => item.dia_semana === weekday);
+}
+
+function unavailableStaffRanges(
+  professionalId: number,
+  date: string,
+  dayRanges: Array<{ hora_inicio: string; hora_fin: string }>,
+  staffSchedules: AgendaOptions["staffSchedules"],
+  staffExtraSchedules: AgendaOptions["staffExtraSchedules"],
+) {
+  const weekday = weekdayByIndex[dateAtNoon(date).getUTCDay()];
+  const regular = staffSchedules
+    .filter((range) => range.id_personal === professionalId && range.dia_semana === weekday)
+    .map((range) => ({ start: timeMinutes(range.hora_inicio), end: timeMinutes(range.hora_fin), reason: range.motivo_pausa_anterior?.trim() || null }));
+  const extraordinary = staffExtraSchedules
+    .filter((range) => range.id_personal === professionalId && range.fecha.slice(0, 10) === date)
+    .map((range) => ({ start: timeMinutes(range.hora_inicio), end: timeMinutes(range.hora_fin), reason: null }));
+  const available = [...regular, ...extraordinary]
+    .sort((left, right) => left.start - right.start);
+
+  return dayRanges.flatMap((businessRange) => {
+    const businessStart = timeMinutes(businessRange.hora_inicio);
+    const businessEnd = timeMinutes(businessRange.hora_fin);
+    const covered = available
+      .map((range) => ({
+        start: Math.max(range.start, businessStart),
+        end: Math.min(range.end, businessEnd),
+        reason: range.reason,
+      }))
+      .filter((range) => range.end > range.start);
+    const unavailable: Array<{ start: number; end: number; reason: string | null }> = [];
+    let cursor = businessStart;
+    for (const range of covered) {
+      if (range.start > cursor) unavailable.push({ start: cursor, end: range.start, reason: range.reason });
+      cursor = Math.max(cursor, range.end);
+    }
+    if (cursor < businessEnd) unavailable.push({ start: cursor, end: businessEnd, reason: null });
+    return unavailable;
+  });
+}
+
+function staffBlockRanges(
+  professionalId: number,
+  date: string,
+  boardStart: number,
+  boardEnd: number,
+  staffBlocks: AgendaOptions["staffBlocks"],
+) {
+  return staffBlocks
+    .filter((block) => block.id_personal === professionalId)
+    .map((block) => {
+      const startDate = appointmentDate(block.fecha_hora_inicio);
+      const endDate = appointmentDate(block.fecha_hora_fin);
+      if (date < startDate || date > endDate) return null;
+      const start = Math.max(boardStart, date === startDate ? appointmentMinutes(block.fecha_hora_inicio) : boardStart);
+      const end = Math.min(boardEnd, date === endDate ? appointmentMinutes(block.fecha_hora_fin) : boardEnd);
+      return end > start ? { id: block.id_bloqueo, start, end, reason: block.motivo?.trim() || "Bloqueo" } : null;
+    })
+    .filter((range): range is { id: number; start: number; end: number; reason: string } => range !== null);
+}
+
+function staffScheduleLabel(
+  professionalId: number,
+  date: string,
+  staffSchedules: AgendaOptions["staffSchedules"],
+  staffExtraSchedules: AgendaOptions["staffExtraSchedules"],
+) {
+  const weekday = weekdayByIndex[dateAtNoon(date).getUTCDay()];
+  const regular = staffSchedules.filter((range) => range.id_personal === professionalId && range.dia_semana === weekday);
+  const extraordinary = staffExtraSchedules.filter((range) => range.id_personal === professionalId && range.fecha.slice(0, 10) === date);
+  const labels = [];
+  if (regular.length) labels.push(`Habitual ${regular.map((range) => `${range.hora_inicio}–${range.hora_fin}`).join(" · ")}`);
+  if (extraordinary.length) labels.push(`Extraordinario ${extraordinary.map((range) => `${range.hora_inicio}–${range.hora_fin}`).join(" · ")}`);
+  return labels.join(" · ") || "Sin disponibilidad";
+}
+
+function exceptionForDate(value: string, businessHours: AgendaOptions["businessHours"]) {
+  const exception = businessHours.excepciones.find((item) => item.fecha === value);
+  if (exception) return exception;
+  const holiday = holidayForDate(value, businessHours);
+  return holiday ? { tipo: "CERRADO" as const, motivo: holiday.nombre } : undefined;
+}
+
+function ExceptionNotice({
+  date,
+  businessHours,
+  compact = false,
+}: {
+  date: string;
+  businessHours: AgendaOptions["businessHours"];
+  compact?: boolean;
+}) {
+  const exception = exceptionForDate(date, businessHours);
+  if (!exception) return null;
+  return (
+    <div className={`agenda-exception-notice agenda-exception-notice--${exception.tipo.toLowerCase()}${compact ? " agenda-exception-notice--compact" : ""}`}>
+      <strong>{exception.tipo === "CERRADO" ? "Día cerrado" : "Horario especial"}</strong>
+      {exception.motivo && <span>{exception.motivo}</span>}
+    </div>
+  );
+}
 
 function clockLabel(totalMinutes: number) {
   const hour = Math.floor(totalMinutes / 60);
@@ -167,26 +291,40 @@ function clockLabel(totalMinutes: number) {
 function DailySpecialistBoard({
   appointments,
   staff,
+  staffSchedules,
+  staffExtraSchedules,
+  staffBlocks,
+  businessHours,
+  date,
 }: {
   appointments: AppointmentListItem[];
   staff: AgendaOptions["staff"];
+  staffSchedules: AgendaOptions["staffSchedules"];
+  staffExtraSchedules: AgendaOptions["staffExtraSchedules"];
+  staffBlocks: AgendaOptions["staffBlocks"];
+  businessHours: AgendaOptions["businessHours"];
+  date: string;
 }) {
   if (!staff.length) {
     return <div className="agenda-day-board-empty">No hay especialistas disponibles para mostrar.</div>;
   }
 
-  const boardStart = Math.floor(
-    Math.min(defaultDayStart, ...appointments.map((appointment) => appointmentMinutes(appointment.fecha_hora_inicio))) / slotMinutes,
-  ) * slotMinutes;
-  const boardEnd = Math.ceil(
-    Math.max(defaultDayEnd, ...appointments.map((appointment) => appointmentMinutes(appointment.fecha_hora_fin))) / slotMinutes,
-  ) * slotMinutes;
+  const dayRanges = scheduleForDate(date, businessHours);
+  const exception = exceptionForDate(date, businessHours);
+  if (!dayRanges.length) {
+    return <div className="agenda-day-closed"><ExceptionNotice date={date} businessHours={businessHours} /><div className="agenda-day-board-empty">{exception?.motivo ? `No habrá atención: ${exception.motivo}.` : "Este día está configurado como no laboral."}</div></div>;
+  }
+  const boardStart = Math.min(...dayRanges.map((range) => timeMinutes(range.hora_inicio)));
+  const boardEnd = Math.max(...dayRanges.map((range) => timeMinutes(range.hora_fin)));
+  const slotMinutes = businessHours.intervalo_minutos;
   const slots = Array.from(
     { length: (boardEnd - boardStart) / slotMinutes },
     (_, index) => boardStart + index * slotMinutes,
   );
 
   return (
+    <div className="agenda-day-schedule">
+      <ExceptionNotice date={date} businessHours={businessHours} />
     <div
       className="agenda-day-board"
       style={{
@@ -214,16 +352,54 @@ function DailySpecialistBoard({
           </span>
           <div>
             <strong>{personName(professional)}</strong>
-            <small>{professional.cargo}</small>
+            <small>{professional.cargo} · {staffScheduleLabel(professional.id_personal, date, staffSchedules, staffExtraSchedules)}</small>
           </div>
         </div>
       ))}
 
       <div className="agenda-time-column">
         {slots.map((minutes) => <span key={minutes}>{clockLabel(minutes)}</span>)}
+        <span className="agenda-time-column__closing">{clockLabel(boardEnd)}</span>
       </div>
       {staff.map((professional) => (
         <div className="agenda-specialist-column" key={professional.id_personal}>
+          {unavailableStaffRanges(
+            professional.id_personal,
+            date,
+            dayRanges,
+            staffSchedules,
+            staffExtraSchedules,
+          ).map((range) => (
+            <div
+              className={`agenda-staff-unavailable${range.reason ? " agenda-staff-unavailable--pause" : ""}`}
+              key={`unavailable-${range.start}-${range.end}`}
+              style={{
+                top: ((range.start - boardStart) / slotMinutes) * slotHeight,
+                height: ((range.end - range.start) / slotMinutes) * slotHeight,
+              } as CSSProperties}
+            >
+              <span><b>{range.reason || "No disponible"}</b><small>{clockLabel(range.start)}–{clockLabel(range.end)}</small></span>
+            </div>
+          ))}
+          {staffBlockRanges(professional.id_personal, date, boardStart, boardEnd, staffBlocks).map((range) => (
+            <div
+              className="agenda-staff-blocked"
+              key={`blocked-${range.id}-${range.start}`}
+              style={{
+                top: ((range.start - boardStart) / slotMinutes) * slotHeight,
+                height: ((range.end - range.start) / slotMinutes) * slotHeight,
+              } as CSSProperties}
+            >
+              <span><b>{range.reason}</b><small>Bloqueado · {clockLabel(range.start)}–{clockLabel(range.end)}</small></span>
+            </div>
+          ))}
+          {dayRanges.slice(0, -1).map((range, index) => {
+            const next = dayRanges[index + 1];
+            const gapStart = timeMinutes(range.hora_fin);
+            const gapEnd = timeMinutes(next.hora_inicio);
+            if (gapEnd <= gapStart) return null;
+            return <div className="agenda-closed-range" key={`${range.hora_fin}-${next.hora_inicio}`} style={{ top: ((gapStart - boardStart) / slotMinutes) * slotHeight, height: ((gapEnd - gapStart) / slotMinutes) * slotHeight } as CSSProperties}><span><b>Sin atención general</b><small>{range.hora_fin}–{next.hora_inicio}</small></span></div>;
+          })}
           {appointments
             .filter((appointment) => appointment.id_personal === professional.id_personal)
             .map((appointment) => {
@@ -255,6 +431,7 @@ function DailySpecialistBoard({
             })}
         </div>
       ))}
+    </div>
     </div>
   );
 }
@@ -421,6 +598,7 @@ export function AgendaCalendar({
               {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((day) => <span className="agenda-weekday" key={day}>{day}</span>)}
               {visibleDates.map((date) => {
                 const items = grouped.get(date) ?? [];
+                const exception = exceptionForDate(date, options.businessHours);
                 const outside = date.slice(0, 7) !== initialDate.slice(0, 7);
                 return (
                   <button
@@ -430,6 +608,7 @@ export function AgendaCalendar({
                     onClick={() => setSelectedDate(date)}
                   >
                     <b>{Number(date.slice(-2))}</b>
+                    {exception && <span className={`agenda-month-exception agenda-month-exception--${exception.tipo.toLowerCase()}`} title={exception.motivo ?? undefined}>{exception.motivo || (exception.tipo === "CERRADO" ? "Cerrado" : "Horario especial")}</span>}
                     <span className="agenda-day-dots">
                       {items.slice(0, 4).map((item) => <i className={`status-${item.estado.toLowerCase()}`} key={item.id_cita} />)}
                       {items.length > 4 && <small>+{items.length - 4}</small>}
@@ -442,12 +621,18 @@ export function AgendaCalendar({
             <DailySpecialistBoard
               appointments={selectedAppointments}
               staff={visibleStaff}
+              staffSchedules={options.staffSchedules ?? []}
+              staffExtraSchedules={options.staffExtraSchedules ?? []}
+              staffBlocks={options.staffBlocks ?? []}
+              businessHours={options.businessHours}
+              date={selectedDate}
             />
           ) : (
             <div className={`agenda-focused-grid agenda-focused-grid--${mode}`}>
               {visibleDates.map((date) => (
                 <section key={date} className={date === selectedDate ? "selected" : ""}>
                   <button type="button" className="agenda-focused-day" onClick={() => setSelectedDate(date)}>{shortDay(date)}</button>
+                  <ExceptionNotice date={date} businessHours={options.businessHours} compact />
                   <div>{(grouped.get(date) ?? []).map((appointment) => <AppointmentCard key={appointment.id_cita} appointment={appointment} options={options} canEdit={canEdit} />)}</div>
                   {!(grouped.get(date) ?? []).length && <span className="agenda-focused-empty">Sin citas</span>}
                 </section>
@@ -464,6 +649,7 @@ export function AgendaCalendar({
           <header>
             <div><span>{selectedAppointments.length ? `${selectedAppointments.length} citas` : "Sin citas"}</span><h2>{longDay(selectedDate)}</h2></div>
           </header>
+          <ExceptionNotice date={selectedDate} businessHours={options.businessHours} compact />
           <div className="agenda-day-panel__body">
             {selectedAppointments.length ? selectedAppointments.map((appointment) => (
               <AppointmentCard key={appointment.id_cita} appointment={appointment} options={options} canEdit={canEdit} />

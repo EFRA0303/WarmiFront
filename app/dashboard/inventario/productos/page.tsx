@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
+  BoxIcon,
   SearchIcon,
 } from "@/components/icons";
 import { DirectoryTableActions } from "@/components/directory-table-actions";
@@ -11,7 +13,7 @@ import { DynamicSearchInput } from "@/components/dynamic-search-input";
 import { GeneralStatusFilter } from "@/components/directory-controls";
 import { ProductDialog } from "@/components/inventory-dialogs";
 import { getCurrentUser } from "@/lib/auth";
-import { getInventoryProducts } from "@/lib/inventory";
+import { getInventoryOptions, getInventoryProducts } from "@/lib/inventory";
 import type { GeneralStatus } from "@/lib/types";
 import "../../people.css";
 import "../../sesiones/sessions.css";
@@ -40,14 +42,16 @@ export default async function Page({
   const search = (one(p.search) || "").trim();
   const raw = one(p.estado)?.toUpperCase();
   const estado = raw && valid.has(raw) ? (raw as GeneralStatus) : undefined;
-  const [result, user] = await Promise.all([
+  const [result, options, user] = await Promise.all([
     getInventoryProducts({ page, limit: size, search, estado }),
+    getInventoryOptions(),
     getCurrentUser(),
   ]);
   if (!result.ok && result.status === 401) redirect("/login");
   if (!user?.permisos.includes("inventario.leer"))
     return <Empty title="Acceso restringido" />;
   if (!result.ok) return <Empty title={result.message} />;
+  if (!options.ok) return <Empty title={options.message} />;
   const edit = user.permisos.includes("inventario.actualizar");
   const create = user.permisos.includes("inventario.crear");
   const pages = Math.max(1, Math.ceil(result.value.total / result.value.limit));
@@ -62,7 +66,7 @@ export default async function Page({
           <h1>Productos</h1>
           <p>Catálogo de insumos y artículos disponibles para venta.</p>
         </div>
-        {create && <ProductDialog />}
+        {create && <ProductDialog categories={options.value.productCategories} />}
       </header>
       <DirectoryTableActions
         scope="inventory-products"
@@ -77,7 +81,7 @@ export default async function Page({
             <DynamicSearchInput
               id="product-search"
               initialValue={search}
-              placeholder="Buscar nombre, descripción o unidad..."
+              placeholder="Buscar nombre, categoría, marca, SKU o código..."
               basePath="/dashboard/inventario/productos"
             />
           </label>
@@ -107,12 +111,16 @@ export default async function Page({
                     return (
                       <tr key={item.id_producto}>
                         <td data-directory-column="product">
-                          <div className="directory-stacked">
-                            <strong>{item.nombre}</strong>
-                            <small>
-                              {item.descripcion ||
-                                `Producto #${item.id_producto}`}
-                            </small>
+                          <div className="inventory-product-cell">
+                            <span className="inventory-product-thumbnail">
+                              {item.imagen_url ? <Image src={`/api/inventory/products/${item.id_producto}/image`} alt={item.nombre} width={48} height={48} unoptimized /> : <BoxIcon />}
+                            </span>
+                            <div className="directory-stacked">
+                              <strong>{item.nombre}</strong>
+                              <small>
+                                {[item.categoria_producto, item.marca, item.sku].filter(Boolean).join(" · ") || `Producto #${item.id_producto}`}
+                              </small>
+                            </div>
                           </div>
                         </td>
                         <td data-directory-column="unit">
@@ -148,7 +156,7 @@ export default async function Page({
                         {edit && (
                           <td data-directory-column="actions">
                             <div className="session-actions">
-                              <ProductDialog item={item} />
+                              <ProductDialog item={item} categories={options.value.productCategories} />
                             </div>
                           </td>
                         )}
@@ -169,7 +177,14 @@ export default async function Page({
           />
         </>
       ) : (
-        <Empty title="No encontramos productos" />
+        <div className="directory-message inventory-empty-products">
+          <b><BoxIcon /></b>
+          <div>
+            <h2>Aún no registraste productos</h2>
+            <p>La categoría ya está lista. Ahora registra el primer producto y selecciona “Cremas” dentro del formulario.</p>
+            {create && <ProductDialog categories={options.value.productCategories} emptyState />}
+          </div>
+        </div>
       )}
     </section>
   );

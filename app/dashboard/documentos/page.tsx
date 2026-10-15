@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { DocumentConfigDialog } from "@/components/security-dialogs";
 import { getCurrentUser } from "@/lib/auth";
 import { getDocumentCompanies, getDocumentConfigs } from "@/lib/security";
+import { isConfigurationAdmin } from "@/lib/configuration-access";
 import "../people.css";
 import "../sesiones/sessions.css";
 import "../inventario/inventory.css";
@@ -17,6 +18,7 @@ export default async function Page() {
     (!companies.ok && companies.status === 401)
   )
     redirect("/login");
+  if (!isConfigurationAdmin(user)) redirect("/dashboard");
   if (!configs.ok || !companies.ok || !user?.permisos.includes("empresa.leer"))
     return null;
   const create = user.permisos.includes("empresa.crear"),
