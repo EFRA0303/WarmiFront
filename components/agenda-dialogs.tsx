@@ -85,7 +85,7 @@ function staffRangesForDate(staffId: number, date: string, options: AgendaOption
   const weekday = weekdayByIndex[new Date(`${date}T12:00:00Z`).getUTCDay()];
   return [
     ...options.staffSchedules.filter((item) => item.id_personal === staffId && item.dia_semana === weekday),
-    ...(options.staffExtraSchedules ?? []).filter((item) => item.id_personal === staffId && item.fecha.slice(0, 10) === date),
+    ...(options.staffExtraHours ?? []).filter((item) => item.id_personal === staffId && item.fecha.slice(0, 10) === date),
   ];
 }
 
@@ -100,7 +100,7 @@ function staffAvailableForRange(staffId: number, start: string, end: string, opt
   if (!insideStaffHours) return false;
   const startInstant = new Date(`${start}:00-04:00`);
   const endInstant = new Date(`${end}:00-04:00`);
-  return !(options.staffBlocks ?? []).some((block) => block.id_personal === staffId && new Date(block.fecha_hora_inicio) < endInstant && new Date(block.fecha_hora_fin) > startInstant);
+  return !(options.staffPermissions ?? []).some((permission) => permission.id_personal === staffId && new Date(permission.fecha_hora_inicio) < endInstant && new Date(permission.fecha_hora_fin) > startInstant);
 }
 
 function openingTime(date: string, options: AgendaOptions) {

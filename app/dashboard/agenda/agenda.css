@@ -260,10 +260,10 @@
 .agenda-staff-unavailable small { color: var(--muted); font-size: .48rem; }
 .agenda-staff-unavailable--pause { border-color: color-mix(in srgb, #eab308 55%, var(--border)); background: repeating-linear-gradient(135deg, color-mix(in srgb, #facc15 12%, transparent) 0 7px, transparent 7px 14px); color: #b77900; }
 .agenda-staff-unavailable--pause span { border-color: color-mix(in srgb, #eab308 32%, var(--border)); background: color-mix(in srgb, #facc15 12%, var(--surface)); }
-.agenda-staff-blocked { position: absolute; right: 0; left: 0; z-index: 0; display: grid; place-items: center; border-top: 1px dashed color-mix(in srgb, var(--danger) 55%, var(--border)); border-bottom: 1px dashed color-mix(in srgb, var(--danger) 55%, var(--border)); background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--danger) 13%, transparent) 0 7px, transparent 7px 14px); color: var(--danger); }
-.agenda-staff-blocked span { display: flex; max-width: calc(100% - 12px); align-items: center; flex-direction: column; gap: 2px; padding: 5px 9px; border: 1px solid color-mix(in srgb, var(--danger) 32%, var(--border)); border-radius: 9px; background: color-mix(in srgb, var(--danger) 11%, var(--surface)); font-size: .52rem; }
-.agenda-staff-blocked b { max-width: 145px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.agenda-staff-blocked small { color: color-mix(in srgb, var(--danger) 72%, var(--muted)); font-size: .48rem; }
+.agenda-staff-permission { position: absolute; right: 0; left: 0; z-index: 0; display: grid; place-items: center; border-top: 1px dashed color-mix(in srgb, var(--danger) 55%, var(--border)); border-bottom: 1px dashed color-mix(in srgb, var(--danger) 55%, var(--border)); background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--danger) 13%, transparent) 0 7px, transparent 7px 14px); color: var(--danger); }
+.agenda-staff-permission span { display: flex; max-width: calc(100% - 12px); align-items: center; flex-direction: column; gap: 2px; padding: 5px 9px; border: 1px solid color-mix(in srgb, var(--danger) 32%, var(--border)); border-radius: 9px; background: color-mix(in srgb, var(--danger) 11%, var(--surface)); font-size: .52rem; }
+.agenda-staff-permission b { max-width: 145px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.agenda-staff-permission small { color: color-mix(in srgb, var(--danger) 72%, var(--muted)); font-size: .48rem; }
 .agenda-timeline-card {
   position: absolute;
   right: 5px;

@@ -83,8 +83,8 @@ const navigation: NavItem[] = [
         label: "Disponibilidad", permission: "disponibilidad.leer",
         children: [
           { label: "Horarios habituales", href: "/dashboard/personal/disponibilidad?tab=regular" },
-          { label: "Horarios extraordinarios", href: "/dashboard/personal/disponibilidad?tab=extras" },
-          { label: "Bloqueos", href: "/dashboard/personal/disponibilidad?tab=blocks" },
+          { label: "Horarios extras", href: "/dashboard/personal/disponibilidad?tab=extra" },
+          { label: "Permisos", href: "/dashboard/personal/disponibilidad?tab=permissions" },
         ],
       },
     ],

@@ -188,16 +188,16 @@ function unavailableStaffRanges(
   date: string,
   dayRanges: Array<{ hora_inicio: string; hora_fin: string }>,
   staffSchedules: AgendaOptions["staffSchedules"],
-  staffExtraSchedules: AgendaOptions["staffExtraSchedules"],
+  staffExtraHours: AgendaOptions["staffExtraHours"],
 ) {
   const weekday = weekdayByIndex[dateAtNoon(date).getUTCDay()];
   const regular = staffSchedules
     .filter((range) => range.id_personal === professionalId && range.dia_semana === weekday)
     .map((range) => ({ start: timeMinutes(range.hora_inicio), end: timeMinutes(range.hora_fin), reason: range.motivo_pausa_anterior?.trim() || null }));
-  const extraordinary = staffExtraSchedules
+  const extraHours = staffExtraHours
     .filter((range) => range.id_personal === professionalId && range.fecha.slice(0, 10) === date)
     .map((range) => ({ start: timeMinutes(range.hora_inicio), end: timeMinutes(range.hora_fin), reason: null }));
-  const available = [...regular, ...extraordinary]
+  const available = [...regular, ...extraHours]
     .sort((left, right) => left.start - right.start);
 
   return dayRanges.flatMap((businessRange) => {
@@ -221,22 +221,22 @@ function unavailableStaffRanges(
   });
 }
 
-function staffBlockRanges(
+function staffPermissionRanges(
   professionalId: number,
   date: string,
   boardStart: number,
   boardEnd: number,
-  staffBlocks: AgendaOptions["staffBlocks"],
+  staffPermissions: AgendaOptions["staffPermissions"],
 ) {
-  return staffBlocks
-    .filter((block) => block.id_personal === professionalId)
-    .map((block) => {
-      const startDate = appointmentDate(block.fecha_hora_inicio);
-      const endDate = appointmentDate(block.fecha_hora_fin);
+  return staffPermissions
+    .filter((permission) => permission.id_personal === professionalId)
+    .map((permission) => {
+      const startDate = appointmentDate(permission.fecha_hora_inicio);
+      const endDate = appointmentDate(permission.fecha_hora_fin);
       if (date < startDate || date > endDate) return null;
-      const start = Math.max(boardStart, date === startDate ? appointmentMinutes(block.fecha_hora_inicio) : boardStart);
-      const end = Math.min(boardEnd, date === endDate ? appointmentMinutes(block.fecha_hora_fin) : boardEnd);
-      return end > start ? { id: block.id_bloqueo, start, end, reason: block.motivo?.trim() || "Bloqueo" } : null;
+      const start = Math.max(boardStart, date === startDate ? appointmentMinutes(permission.fecha_hora_inicio) : boardStart);
+      const end = Math.min(boardEnd, date === endDate ? appointmentMinutes(permission.fecha_hora_fin) : boardEnd);
+      return end > start ? { id: permission.id_permiso, start, end, reason: permission.motivo?.trim() || "Permiso" } : null;
     })
     .filter((range): range is { id: number; start: number; end: number; reason: string } => range !== null);
 }
@@ -245,14 +245,14 @@ function staffScheduleLabel(
   professionalId: number,
   date: string,
   staffSchedules: AgendaOptions["staffSchedules"],
-  staffExtraSchedules: AgendaOptions["staffExtraSchedules"],
+  staffExtraHours: AgendaOptions["staffExtraHours"],
 ) {
   const weekday = weekdayByIndex[dateAtNoon(date).getUTCDay()];
   const regular = staffSchedules.filter((range) => range.id_personal === professionalId && range.dia_semana === weekday);
-  const extraordinary = staffExtraSchedules.filter((range) => range.id_personal === professionalId && range.fecha.slice(0, 10) === date);
+  const extraHours = staffExtraHours.filter((range) => range.id_personal === professionalId && range.fecha.slice(0, 10) === date);
   const labels = [];
   if (regular.length) labels.push(`Habitual ${regular.map((range) => `${range.hora_inicio}–${range.hora_fin}`).join(" · ")}`);
-  if (extraordinary.length) labels.push(`Extraordinario ${extraordinary.map((range) => `${range.hora_inicio}–${range.hora_fin}`).join(" · ")}`);
+  if (extraHours.length) labels.push(`Extra ${extraHours.map((range) => `${range.hora_inicio}–${range.hora_fin}`).join(" · ")}`);
   return labels.join(" · ") || "Sin disponibilidad";
 }
 
@@ -292,16 +292,16 @@ function DailySpecialistBoard({
   appointments,
   staff,
   staffSchedules,
-  staffExtraSchedules,
-  staffBlocks,
+  staffExtraHours,
+  staffPermissions,
   businessHours,
   date,
 }: {
   appointments: AppointmentListItem[];
   staff: AgendaOptions["staff"];
   staffSchedules: AgendaOptions["staffSchedules"];
-  staffExtraSchedules: AgendaOptions["staffExtraSchedules"];
-  staffBlocks: AgendaOptions["staffBlocks"];
+  staffExtraHours: AgendaOptions["staffExtraHours"];
+  staffPermissions: AgendaOptions["staffPermissions"];
   businessHours: AgendaOptions["businessHours"];
   date: string;
 }) {
@@ -352,7 +352,7 @@ function DailySpecialistBoard({
           </span>
           <div>
             <strong>{personName(professional)}</strong>
-            <small>{professional.cargo} · {staffScheduleLabel(professional.id_personal, date, staffSchedules, staffExtraSchedules)}</small>
+            <small>{professional.cargo} · {staffScheduleLabel(professional.id_personal, date, staffSchedules, staffExtraHours)}</small>
           </div>
         </div>
       ))}
@@ -368,7 +368,7 @@ function DailySpecialistBoard({
             date,
             dayRanges,
             staffSchedules,
-            staffExtraSchedules,
+            staffExtraHours,
           ).map((range) => (
             <div
               className={`agenda-staff-unavailable${range.reason ? " agenda-staff-unavailable--pause" : ""}`}
@@ -381,16 +381,16 @@ function DailySpecialistBoard({
               <span><b>{range.reason || "No disponible"}</b><small>{clockLabel(range.start)}–{clockLabel(range.end)}</small></span>
             </div>
           ))}
-          {staffBlockRanges(professional.id_personal, date, boardStart, boardEnd, staffBlocks).map((range) => (
+          {staffPermissionRanges(professional.id_personal, date, boardStart, boardEnd, staffPermissions).map((range) => (
             <div
-              className="agenda-staff-blocked"
-              key={`blocked-${range.id}-${range.start}`}
+              className="agenda-staff-permission"
+              key={`permission-${range.id}-${range.start}`}
               style={{
                 top: ((range.start - boardStart) / slotMinutes) * slotHeight,
                 height: ((range.end - range.start) / slotMinutes) * slotHeight,
               } as CSSProperties}
             >
-              <span><b>{range.reason}</b><small>Bloqueado · {clockLabel(range.start)}–{clockLabel(range.end)}</small></span>
+              <span><b>{range.reason}</b><small>Permiso · {clockLabel(range.start)}–{clockLabel(range.end)}</small></span>
             </div>
           ))}
           {dayRanges.slice(0, -1).map((range, index) => {
@@ -622,8 +622,8 @@ export function AgendaCalendar({
               appointments={selectedAppointments}
               staff={visibleStaff}
               staffSchedules={options.staffSchedules ?? []}
-              staffExtraSchedules={options.staffExtraSchedules ?? []}
-              staffBlocks={options.staffBlocks ?? []}
+              staffExtraHours={options.staffExtraHours ?? []}
+              staffPermissions={options.staffPermissions ?? []}
               businessHours={options.businessHours}
               date={selectedDate}
             />

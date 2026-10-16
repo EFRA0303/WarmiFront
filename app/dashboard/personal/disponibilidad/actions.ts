@@ -81,44 +81,44 @@ export async function saveStaffWeek(_state: RegistrationState, data: FormData): 
   return result ?? success("Semana laboral actualizada", schedules.length ? "Los horarios habituales del empleado quedaron configurados." : "El empleado quedó sin horarios habituales activos.");
 }
 
-export async function saveExtraSchedule(extraId: number | null, _state: RegistrationState, data: FormData): Promise<RegistrationState> {
+export async function saveExtraHours(extraHoursId: number | null, _state: RegistrationState, data: FormData): Promise<RegistrationState> {
   const staffId = positiveId(data, "id_personal");
   const date = text(data, "fecha");
   const start = text(data, "hora_inicio");
   const end = text(data, "hora_fin");
   const fieldErrors: Record<string, string> = {};
-  if (!extraId && !staffId) fieldErrors.id_personal = "Selecciona un especialista.";
+  if (!extraHoursId && !staffId) fieldErrors.id_personal = "Selecciona un especialista.";
   if (!date) fieldErrors.fecha = "Selecciona una fecha.";
   if (!start) fieldErrors.hora_inicio = "Selecciona la hora inicial.";
   if (!end || end <= start) fieldErrors.hora_fin = "La hora final debe ser posterior a la inicial.";
   if (Object.keys(fieldErrors).length) return { fieldErrors };
-  const body = { ...(!extraId ? { id_personal: staffId } : {}), fecha: date, hora_inicio: start, hora_fin: end, motivo: text(data, "motivo") || null, ...(extraId ? { estado: text(data, "estado") } : {}) };
-  const result = await mutate(extraId ? `/disponibilidad/horarios-extra/${extraId}` : "/disponibilidad/horarios-extra", extraId ? "PATCH" : "POST", body);
-  return result ?? success(extraId ? "Horario extraordinario actualizado" : "Horario extraordinario autorizado", "La excepción quedó aplicada a la fecha seleccionada.");
+  const body = { ...(!extraHoursId ? { id_personal: staffId } : {}), fecha: date, hora_inicio: start, hora_fin: end, motivo: text(data, "motivo") || null, ...(extraHoursId ? { estado: text(data, "estado") } : {}) };
+  const result = await mutate(extraHoursId ? `/disponibilidad/horarios-extras/${extraHoursId}` : "/disponibilidad/horarios-extras", extraHoursId ? "PATCH" : "POST", body);
+  return result ?? success(extraHoursId ? "Horario extra actualizado" : "Horario extra autorizado", "El horario extra quedó aplicado a la fecha seleccionada.");
 }
 
-export async function saveStaffBlock(blockId: number | null, _state: RegistrationState, data: FormData): Promise<RegistrationState> {
+export async function saveStaffPermission(permissionId: number | null, _state: RegistrationState, data: FormData): Promise<RegistrationState> {
   const staffId = positiveId(data, "id_personal");
   const rawStart = text(data, "fecha_hora_inicio");
   const rawEnd = text(data, "fecha_hora_fin");
   const fieldErrors: Record<string, string> = {};
-  if (!blockId && !staffId) fieldErrors.id_personal = "Selecciona un especialista.";
-  if (!rawStart) fieldErrors.fecha_hora_inicio = "Selecciona el inicio del bloqueo.";
+  if (!permissionId && !staffId) fieldErrors.id_personal = "Selecciona un especialista.";
+  if (!rawStart) fieldErrors.fecha_hora_inicio = "Selecciona el inicio del permiso.";
   if (!rawEnd || rawEnd <= rawStart) fieldErrors.fecha_hora_fin = "La finalización debe ser posterior al inicio.";
   if (Object.keys(fieldErrors).length) return { fieldErrors };
-  const body = { ...(!blockId ? { id_personal: staffId } : {}), fecha_hora_inicio: localIso(rawStart), fecha_hora_fin: localIso(rawEnd), motivo: text(data, "motivo") || null, ...(blockId ? { estado: text(data, "estado") === "true" } : {}) };
-  const result = await mutate(blockId ? `/disponibilidad/bloqueos/${blockId}` : "/disponibilidad/bloqueos", blockId ? "PATCH" : "POST", body);
-  return result ?? success(blockId ? "Bloqueo actualizado" : "Bloqueo registrado", "Agenda impedirá reservas dentro de este periodo mientras permanezca activo.");
+  const body = { ...(!permissionId ? { id_personal: staffId } : {}), fecha_hora_inicio: localIso(rawStart), fecha_hora_fin: localIso(rawEnd), motivo: text(data, "motivo") || null, ...(permissionId ? { estado: text(data, "estado") === "true" } : {}) };
+  const result = await mutate(permissionId ? `/disponibilidad/permisos/${permissionId}` : "/disponibilidad/permisos", permissionId ? "PATCH" : "POST", body);
+  return result ?? success(permissionId ? "Permiso actualizado" : "Permiso registrado", "La agenda impedirá reservas dentro de este periodo mientras el permiso permanezca activo.");
 }
 
-export async function deleteStaffBlock(blockId: number, _state: RegistrationState, _data: FormData): Promise<RegistrationState> {
+export async function deleteStaffPermission(permissionId: number, _state: RegistrationState, _data: FormData): Promise<RegistrationState> {
   void _state;
   void _data;
-  if (!Number.isInteger(blockId) || blockId < 1) return { ...failure("El bloqueo seleccionado no es válido."), title: "No se pudo eliminar" };
+  if (!Number.isInteger(permissionId) || permissionId < 1) return { ...failure("El permiso seleccionado no es válido."), title: "No se pudo eliminar" };
   const token = await getSessionToken();
   if (!token) return { ...failure("La sesión venció. Vuelve a iniciar sesión."), title: "No se pudo eliminar" };
   try {
-    const response = await fetch(backendUrl(`/disponibilidad/bloqueos/${blockId}`), {
+    const response = await fetch(backendUrl(`/disponibilidad/permisos/${permissionId}`), {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
@@ -129,5 +129,5 @@ export async function deleteStaffBlock(blockId: number, _state: RegistrationStat
   }
   revalidatePath("/dashboard/personal/disponibilidad");
   revalidatePath("/dashboard/agenda");
-  return success("Bloqueo eliminado", "El periodo dejó de estar bloqueado y vuelve a estar disponible para la agenda.");
+  return success("Permiso eliminado", "El periodo del permiso vuelve a estar disponible para la agenda.");
 }

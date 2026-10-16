@@ -300,7 +300,7 @@ export type AgendaOptions = {
     hora_fin: string;
     motivo_pausa_anterior: string | null;
   }>;
-  staffExtraSchedules: Array<{
+  staffExtraHours: Array<{
     id_horario_extra: number;
     id_personal: number;
     fecha: string;
@@ -308,8 +308,8 @@ export type AgendaOptions = {
     hora_fin: string;
     motivo: string | null;
   }>;
-  staffBlocks: Array<{
-    id_bloqueo: number;
+  staffPermissions: Array<{
+    id_permiso: number;
     id_personal: number;
     fecha_hora_inicio: string;
     fecha_hora_fin: string;
@@ -499,7 +499,7 @@ export type RegularSchedule = {
   estado: boolean;
 };
 
-export type ExtraSchedule = {
+export type ExtraHours = {
   id_horario_extra: number;
   id_personal: number;
   fecha: string;
@@ -510,8 +510,8 @@ export type ExtraSchedule = {
   estado: "AUTORIZADO" | "CANCELADO";
 };
 
-export type StaffBlock = {
-  id_bloqueo: number;
+export type StaffPermission = {
+  id_permiso: number;
   id_personal: number;
   fecha_hora_inicio: string;
   fecha_hora_fin: string;
@@ -522,8 +522,8 @@ export type StaffBlock = {
 export type AvailabilityData = {
   staff: AvailabilityStaff[];
   schedules: RegularSchedule[];
-  extras: ExtraSchedule[];
-  blocks: StaffBlock[];
+  extraHours: ExtraHours[];
+  permissions: StaffPermission[];
 };
 
 export type SessionStatus = "EN_CURSO" | "FINALIZADA" | "CANCELADA";

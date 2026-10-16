@@ -176,7 +176,7 @@ export function BusinessHoursForm({ schedule }: { schedule: BusinessHours }) {
         })}</div> : <div className="hours-empty"><ClockIcon /><h3>No hay feriados configurados</h3><p>Agrega fechas fijas o feriados que cambian según el año.</p></div>}
       </section>
       {state.fieldErrors?.form && <p className="hours-form-error">{state.fieldErrors.form}</p>}
-      <footer className="hours-footer"><p>La disponibilidad individual y los bloqueos de cada profesional continuarán aplicándose dentro de estos horarios.</p><button type="submit" className="directory-primary" disabled={pending}>{pending ? "Guardando..." : "Guardar configuración"}</button></footer>
+      <footer className="hours-footer"><p>La disponibilidad individual y los permisos de cada profesional continuarán aplicándose dentro de estos horarios.</p><button type="submit" className="directory-primary" disabled={pending}>{pending ? "Guardando..." : "Guardar configuración"}</button></footer>
     </form>
     <SubmissionResultDialog state={state} onSuccess={() => router.refresh()} />
   </>;
