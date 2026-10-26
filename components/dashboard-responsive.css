@@ -1,0 +1,202 @@
+/* Reglas compartidas del area interna. La especificidad del shell evita que
+   las hojas de cada ruta cambien estos ajustes al navegar entre modulos. */
+@media screen {
+  .app-shell :is(.topbar-title, .topbar-title > div) { min-width: 0; }
+  .app-shell .topbar-title { flex: 1; }
+  .app-shell .topbar-title :is(strong, span) { overflow-wrap: anywhere; }
+  .app-shell .topbar-actions { flex: 0 0 auto; }
+  .app-shell .agenda-card { flex-shrink: 0; }
+  .app-shell :is(.sidebar-brand-row, .sidebar-profile) { flex-shrink: 0; }
+
+  .app-shell :is(.directory-heading, .users-heading, .access-heading,
+    .users-heading-actions, .access-heading__actions, .catalog-toolbar,
+    .catalog-create-actions, .availability-toolbar, .availability-toolbar__filters) {
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+  .app-shell :is(.directory-heading, .users-heading, .access-heading) > div { min-width: 0; }
+  .app-shell :is(.directory-toolbar form, .users-search) { flex-wrap: wrap; }
+  .app-shell :is(.directory-search, .search-control) { flex: 1 1 240px; min-width: min(240px, 100%); }
+  .app-shell :is(.directory-status-control, .custom-status-control, .inventory-filter) { max-width: 100%; }
+  .app-shell :is(.catalog-tabs, .availability-tabs) { max-width: 100%; overflow-x: auto; }
+  .app-shell :is(.catalog-tabs, .availability-tabs) button { flex-shrink: 0; }
+
+  /* El desplazamiento pertenece a la tabla, nunca a toda la pagina. */
+  .app-shell :is(.directory-table-scroll, .users-table-scroll, .catalog-table-card,
+    .availability-table, .availability-person-week-card, .agenda-focused-grid, .agenda-day-board) {
+    min-width: 0;
+    max-width: 100%;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--subtle) var(--surface-soft);
+  }
+  .app-shell :is(.registration-grid, .registration-grid--three, .account-profile-grid) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .app-shell .registration-grid--three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .app-shell dialog :is(label, input, select, textarea) { min-width: 0; max-width: 100%; }
+  .app-shell dialog { overscroll-behavior: contain; }
+  .app-shell :is(.role-dialog__header, .role-dialog footer, .role-fields) { flex-shrink: 0; }
+  .app-shell .role-dialog__content { overflow-y: auto; }
+  .app-shell .submission-result__overlay { overflow-y: auto; }
+  .app-shell .submission-result { max-height: calc(100dvh - 40px); overflow-y: auto; }
+  .app-shell .account-menu__dropdown { max-height: calc(100dvh - var(--app-topbar-height) - 24px); overflow-y: auto; }
+  .app-shell .column-selector__menu { max-height: min(360px, 55dvh); overflow-y: auto; }
+}
+
+/* Escala de trabajo para laptops, sin zoom y sin reducir el texto de lectura. */
+@media screen and (min-width: 981px) and (max-width: 1440px) {
+  .app-shell { grid-template-columns: 248px minmax(0, 1fr); }
+  .app-shell .sidebar-brand-row { padding-inline: 16px; }
+  .app-shell .sidebar-nav { padding-inline: 10px; }
+  .app-shell .nav-branch__trigger { gap: 9px; padding-inline: 10px; }
+  .app-shell .nav-branch__children { margin-left: 16px; padding-left: 8px; }
+  .app-shell .sidebar-brand-row .brand { gap: 10px; }
+  .app-shell .sidebar-brand-row .brand__copy strong { font-size: 1.1rem; }
+  .app-shell .sidebar-brand-row .brand__copy small { font-size: 0.62rem; }
+}
+
+@media screen and (min-width: 981px) and (max-height: 900px) {
+  .app-shell { --app-topbar-height: 60px; }
+  .app-shell .app-topbar { padding: 8px 20px; gap: 14px; }
+  .app-shell .sidebar-brand-row { min-height: 72px; padding-block: 14px; }
+  .app-shell .sidebar-nav { padding-block: 10px; }
+  .app-shell .nav-branch__trigger,
+  .app-shell .nav-leaf { min-height: 40px; }
+  .app-shell .nav-branch__children :is(.nav-branch__trigger, .nav-leaf) { min-height: 34px; }
+  .app-shell .sidebar-profile { margin: 8px 10px 12px; padding: 10px; }
+  .app-shell .topbar-title--prominent strong { font-size: 2rem; }
+  .app-shell .topbar-title--configuration strong { font-size: 1.1rem; }
+  .app-shell .topbar-title.topbar-title--configuration span { font-size: 0.95rem; }
+
+  .app-shell :is(.directory-page, .registration-page, .users-page, .access-page,
+    .dashboard-content, .history-detail) {
+    width: min(1400px, calc(100% - 40px));
+    padding-block: 24px 32px;
+  }
+  .app-shell .dashboard-content { max-width: 1180px; }
+  .app-shell .registration-page { max-width: 1080px; }
+  .app-shell :is(.directory-heading h1, .registration-page > header h1,
+    .users-heading h1, .access-heading h1, .dashboard-welcome h1) {
+    margin-top: 6px;
+    font-size: clamp(1.75rem, 2.5vw, 2.25rem);
+    line-height: 1.1;
+  }
+  .app-shell :is(.directory-actionbar, .users-actionbar, .access-stats) { margin-top: 18px; }
+  .app-shell .directory-toolbar { margin-top: 18px; padding: 10px; }
+  .app-shell .users-toolbar { padding: 10px; }
+  .app-shell :is(.directory-table-card, .users-table-card) { margin-top: 14px; border-radius: 16px; }
+  .app-shell :is(.directory-table-scroll, .users-table-scroll, .catalog-table-card, .availability-table) {
+    max-height: max(260px, calc(100dvh - 280px));
+    overflow: auto;
+  }
+  .app-shell :is(.directory-table, .users-table, .catalog-table-card table, .availability-table table) th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    height: 42px;
+    padding-inline: 12px;
+  }
+  .app-shell :is(.directory-table, .users-table, .catalog-table-card table, .availability-table table) td {
+    height: 62px;
+    padding: 9px 12px;
+  }
+  .app-shell .directory-footer { min-height: 54px; }
+  .app-shell .module-grid { gap: 14px; margin-top: 24px; }
+  .app-shell .module-card { min-height: 210px; padding: 20px; }
+  .app-shell .profile-card { padding: 20px; }
+  .app-shell .registration-form { margin-top: 20px; }
+  .app-shell .registration-section { padding: 20px; }
+  .app-shell .registration-section__heading { margin-bottom: 16px; padding-bottom: 12px; }
+  .app-shell :is(.company-settings-card, .company-profile-card, .presence-section) { padding: 20px; }
+  .app-shell .company-profile-card__details { margin-top: 22px; padding-top: 18px; }
+  .app-shell .availability-summary article { min-height: 88px; padding: 12px 16px; }
+  .app-shell .availability-person-week-grid { grid-template-columns: 190px repeat(7, minmax(106px, 1fr)); min-width: 960px; }
+  .app-shell .availability-week-profile { padding: 12px; }
+  .app-shell .hours-heading { padding: 18px 22px; }
+  .app-shell :is(.hours-content, .hours-layout) { padding: 22px; }
+  .app-shell :is(.hours-toolbar, .hours-footer) { padding: 16px 22px; }
+}
+
+/* Las ventanas conservan su ancho propio y desplazan el contenido, no los
+   botones de cierre/guardado. Incluye los dialogos reutilizados por modulos. */
+@media screen and (max-height: 900px) {
+  .app-shell :is(.session-dialog > section, .catalog-dialog > section,
+    .availability-dialog > section, .treatment-dialog__panel, .agenda-dialog__panel) {
+    padding: 18px;
+    scroll-padding-block: 104px 88px;
+  }
+  .app-shell :is(.session-dialog > section, .catalog-dialog > section,
+    .availability-dialog > section, .treatment-dialog__panel, .agenda-dialog__panel) > header {
+    position: sticky;
+    top: -18px;
+    z-index: 4;
+    margin: -18px -18px 0;
+    padding: 16px 18px;
+    background: var(--surface);
+  }
+  .app-shell dialog :is(.session-form, .session-confirm, .catalog-form, .availability-form, .treatment-form, .agenda-form) > footer {
+    position: sticky;
+    bottom: -18px;
+    z-index: 3;
+    margin-inline: -18px;
+    margin-bottom: -18px;
+    padding: 12px 18px;
+    background: var(--surface);
+  }
+  .app-shell :is(.registration-dialog__header, .account-dialog__header) { padding: 16px 20px; }
+  .app-shell .account-dialog__body { padding: 18px 20px; }
+  .app-shell .account-dialog__footer { padding: 12px 20px; }
+  .app-shell .availability-week-groups { max-height: none; overflow-y: visible; }
+  .app-shell .package-service-list { max-height: min(300px, 40dvh); }
+}
+
+/* El ancho del espacio de trabajo ya descuenta el menu lateral. */
+@container workspace (max-width: 1120px) {
+  .app-shell .agenda-commandbar { flex-wrap: wrap; }
+  .app-shell .agenda-status-filters { order: 3; flex-basis: 100%; }
+  .app-shell .agenda-commandbar > .directory-primary { margin-left: auto; }
+  .app-shell :is(.hours-week, .hours-holiday-groups) { grid-template-columns: minmax(0, 1fr); }
+  .app-shell .catalog-toolbar > label { flex: 1 1 240px; min-width: 0; }
+}
+
+@container workspace (max-width: 900px) {
+  .app-shell .agenda-layout { grid-template-columns: minmax(0, 1fr); }
+  .app-shell .agenda-day-panel__body { min-height: 0; }
+  .app-shell .hours-layout { grid-template-columns: minmax(0, 1fr); }
+  .app-shell .hours-exception__main { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .app-shell .hours-exception__reason { grid-column: 1 / -1; }
+  .app-shell .roles-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .app-shell .presence-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
+}
+
+@media screen and (min-width: 981px) and (max-height: 900px) {
+  .app-shell :is(.agenda-calendar-panel, .agenda-day-panel) { min-height: 0; }
+  .app-shell .agenda-calendar-panel { padding: 14px; }
+  .app-shell .agenda-month-grid { grid-template-rows: auto repeat(6, minmax(clamp(36px, 6dvh, 52px), 1fr)); margin-top: 8px; }
+  .app-shell .agenda-month-day { min-height: clamp(36px, 6dvh, 52px); gap: 3px; padding: 0; }
+  .app-shell .agenda-month-day.today b { width: 22px; height: 22px; }
+  .app-shell .agenda-calendar-heading { min-height: 44px; }
+  .app-shell .agenda-legend { gap: 12px; margin-top: 10px; padding-top: 10px; }
+  .app-shell .agenda-day-panel { max-height: max(380px, calc(100dvh - 220px)); }
+  .app-shell .agenda-day-panel__body { min-height: 0; }
+  .app-shell .agenda-free-day { min-height: 240px; }
+  .app-shell .agenda-day-board { max-height: max(280px, calc(100dvh - 260px)); grid-template-rows: 100px auto; }
+  .app-shell .agenda-specialist { gap: 4px; padding: 7px; }
+  .app-shell .agenda-specialist > span { width: 42px; height: 42px; }
+  .app-shell .agenda-focused-grid > section { min-height: 300px; }
+}
+
+@media screen and (max-width: 720px) {
+  .app-shell :is(.registration-grid, .registration-grid--three, .account-profile-grid) { grid-template-columns: minmax(0, 1fr); }
+  .app-shell .registration-field--wide { grid-column: auto; }
+  .app-shell :is(.directory-heading, .users-heading, .access-heading) { align-items: flex-start; }
+  .app-shell .sale-detail { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media screen and (max-width: 650px) {
+  .app-shell .roles-grid { grid-template-columns: minmax(0, 1fr); }
+  .app-shell .topbar-title--configuration strong { font-size: 1rem; }
+  .app-shell .topbar-title.topbar-title--configuration span { font-size: 0.8rem; }
+  .app-shell .topbar-actions { gap: 7px; }
+}

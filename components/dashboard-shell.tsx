@@ -30,6 +30,7 @@ import { PresenceHeartbeat } from "@/components/presence-heartbeat";
 import type { CompanyBranding, CurrentUser } from "@/lib/types";
 import { isConfigurationAdmin } from "@/lib/configuration-access";
 import "./dashboard-shell.css";
+import "./dashboard-responsive.css";
 
 type NavIcon = ComponentType<SVGProps<SVGSVGElement>>;
 type NavItem = {
