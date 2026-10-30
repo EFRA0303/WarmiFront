@@ -39,7 +39,7 @@ const day = (value: string | null) =>
         day: "2-digit",
         month: "short",
         year: "numeric",
-      }).format(new Date(`${value}T12:00:00Z`))
+      }).format(new Date(`${value.slice(0, 10)}T12:00:00Z`))
     : "Sin fecha";
 export default async function Page({
   searchParams,

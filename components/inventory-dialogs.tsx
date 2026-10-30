@@ -187,31 +187,30 @@ function ProductForm({
           </label>
           <h3 className="session-wide">Presentación y control de stock</h3>
           <label>
-            <span>Unidad base *</span>
-            <select name="unidad_medida" defaultValue={item?.unidad_medida ?? "UNIDAD"} required>
-              {hasLegacyUnit && <option value={item!.unidad_medida}>{item!.unidad_medida} (valor anterior)</option>}
-              {productUnits.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-            </select>
-            <small className="inventory-field-help">Unidad real en la que se controla y descuenta el stock.</small>
-            <Error state={state} name="unidad_medida" />
-          </label>
-          <label>
-            <span>Presentación *</span>
+            <span>Tipo de empaque *</span>
             <select name="presentacion" defaultValue={item?.presentacion ?? "Unidad"} required>
               {hasLegacyPresentation && <option value={item!.presentacion}>{item!.presentacion}</option>}
               {presentations.map((value) => <option key={value} value={value}>{value}</option>)}
             </select>
+            <small className="inventory-field-help">Cómo viene el producto. Ej. frasco, pote, tubo o caja.</small>
           </label>
-          <label>
+          <div className="inventory-content-field">
             <span>Contenido por presentación *</span>
-            <input name="contenido_presentacion" type="number" min="0.001" step="0.001" defaultValue={item?.contenido_presentacion ?? 1} required />
-            <small className="inventory-field-help">Ej. un pote de 100 g: contenido 100 y unidad base Gramo.</small>
+            <div className="inventory-content-field__row">
+              <input name="contenido_presentacion" aria-label="Contenido por presentación" type="number" inputMode="numeric" min="1" step="1" defaultValue={item ? String(Math.round(Number(item.contenido_presentacion))) : "1"} required />
+              <select name="unidad_medida" aria-label="Unidad del contenido" defaultValue={item?.unidad_medida ?? "UNIDAD"} required>
+                {hasLegacyUnit && <option value={item!.unidad_medida}>{item!.unidad_medida} (valor anterior)</option>}
+                {productUnits.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+              </select>
+            </div>
+            <small className="inventory-field-help">Número entero y su unidad. Ej. un frasco de 100 ml: 100 y Mililitro. El stock se controla y descuenta en esta unidad.</small>
             <Error state={state} name="contenido_presentacion" />
-          </label>
+            <Error state={state} name="unidad_medida" />
+          </div>
           <label>
             <span>Stock mínimo *</span>
-            <input name="stock_minimo" type="number" min="0" step="0.01" defaultValue={item ? String(item.stock_minimo) : "0"} required />
-            <small className="inventory-field-help">Solo genera una alerta; el stock se carga desde lotes.</small>
+            <input name="stock_minimo" type="number" inputMode="numeric" min="0" step="1" defaultValue={item ? String(Math.round(Number(item.stock_minimo))) : "0"} required />
+            <small className="inventory-field-help">Número entero. Solo genera una alerta; el stock se carga desde lotes.</small>
             <Error state={state} name="stock_minimo" />
           </label>
           <h3 className="session-wide">Uso y venta</h3>

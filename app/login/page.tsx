@@ -65,11 +65,11 @@ export default async function LoginPage() {
           <Brand
             inverse
             name={company.name}
-            subtitle="Estética & bienestar"
+            subtitle={company.subtitle}
             logoSrc={company.hasLogo ? "/api/company-brand/logo" : undefined}
           />
           <div className="hero-message">
-            <span className="hero-eyebrow">TU BIENESTAR, NUESTRA PASIÓN</span>
+            <span className="hero-eyebrow">{company.loginEyebrow}</span>
             <h1>
               <span>{tagline.lead}</span>
               {tagline.accent && <em>{tagline.accent}</em>}
@@ -88,7 +88,7 @@ export default async function LoginPage() {
         <div className="mobile-brand">
           <Brand
             name={company.name}
-            subtitle="Gestión integral"
+            subtitle={company.subtitle}
             logoSrc={company.hasLogo ? "/api/company-brand/logo" : undefined}
           />
         </div>
@@ -104,6 +104,7 @@ export default async function LoginPage() {
               {loginTitle.lead}{" "}
               <em>{loginTitle.accent}</em>
             </h2>
+            <span className="login-heading__subtitle">{company.subtitle}</span>
             <p>
               Usa tus credenciales para continuar en{" "}
               <strong>{company.name}</strong>.

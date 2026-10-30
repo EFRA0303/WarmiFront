@@ -66,16 +66,6 @@ const navigation: NavItem[] = [
     ],
   },
   {
-    label: "Atención clínica", icon: TreatmentIcon,
-    anyPermissions: ["clinica.leer", "tratamientos.leer"],
-    children: [
-      { label: "Solicitudes de servicio", href: "/dashboard/solicitudes", permission: "clinica.leer" },
-      { label: "Tratamientos", href: "/dashboard/tratamientos", permission: "tratamientos.leer" },
-      { label: "Sesiones", href: "/dashboard/sesiones", permission: "clinica.leer" },
-      { label: "Valoraciones y medidas", href: "/dashboard/valoraciones", permission: "clinica.leer" },
-    ],
-  },
-  {
     label: "Personal", icon: BriefcaseIcon, anyPermissions: ["personal.leer", "disponibilidad.leer"],
     adminOnly: true,
     children: [
@@ -88,6 +78,33 @@ const navigation: NavItem[] = [
           { label: "Permisos", href: "/dashboard/personal/disponibilidad?tab=permissions" },
         ],
       },
+    ],
+  },
+  {
+    label: "Atención", icon: TreatmentIcon,
+    anyPermissions: ["catalogo.leer", "clinica.leer", "comercial.leer", "adquisiciones.leer"],
+    children: [
+      { label: "Solicitudes de servicio", href: "/dashboard/solicitudes", permission: "clinica.leer" },
+      { label: "Paquetes", href: "/dashboard/paquetes", permission: "comercial.leer", adminOnly: true },
+      { label: "Promociones", href: "/dashboard/promociones", permission: "comercial.leer", adminOnly: true },
+      { label: "Adquisiciones de pacientes", href: "/dashboard/adquisiciones", permission: "adquisiciones.leer" },
+      {
+        label: "Catálogo", href: "/dashboard/servicios", permission: "catalogo.leer", adminOnly: true,
+        children: [
+          { label: "Área y categoría", href: "/dashboard/servicios?tab=structure" },
+          { label: "Servicios", href: "/dashboard/servicios?tab=services" },
+        ],
+      },
+    ],
+  },
+  {
+    label: "Atención clínica", icon: TreatmentIcon,
+    anyPermissions: ["clinica.leer", "tratamientos.leer"],
+    children: [
+      { label: "Solicitudes de servicio", href: "/dashboard/solicitudes", permission: "clinica.leer" },
+      { label: "Tratamientos", href: "/dashboard/tratamientos", permission: "tratamientos.leer" },
+      { label: "Sesiones", href: "/dashboard/sesiones", permission: "clinica.leer" },
+      { label: "Valoraciones y medidas", href: "/dashboard/valoraciones", permission: "clinica.leer" },
     ],
   },
   {
@@ -107,6 +124,7 @@ const navigation: NavItem[] = [
     label: "Inventario", icon: BoxIcon, permission: "inventario.leer",
     children: [
       { label: "Productos", href: "/dashboard/inventario/productos", adminOnly: true },
+      { label: "Categorías de productos", href: "/dashboard/inventario/categorias", permission: "catalogo.leer", adminOnly: true },
       { label: "Lotes y existencias", href: "/dashboard/inventario/lotes", adminOnly: true },
       { label: "Movimientos", href: "/dashboard/inventario/movimientos", adminOnly: true },
       { label: "Consumos por sesión", href: "/dashboard/inventario/consumos" },
@@ -125,19 +143,10 @@ const navigation: NavItem[] = [
   {
     label: "Configuración", icon: SettingsIcon,
     adminOnly: true,
-    anyPermissions: ["empresa.leer", "catalogo.leer"],
+    permission: "empresa.leer",
     children: [
       { label: "Empresa", href: "/dashboard/empresa", permission: "empresa.leer" },
       { label: "Horarios de atención", href: "/dashboard/horarios-atencion", permission: "empresa.leer" },
-      {
-        label: "Catálogo", permission: "catalogo.leer",
-        children: [
-          { label: "Área y categoría", href: "/dashboard/servicios?tab=structure" },
-          { label: "Servicios", href: "/dashboard/servicios?tab=services" },
-          { label: "Tipos de medida", href: "/dashboard/servicios?tab=measures" },
-          { label: "Categorías de productos", href: "/dashboard/servicios?tab=product-categories" },
-        ],
-      },
       { label: "Configuración de documentos", href: "/dashboard/documentos", permission: "empresa.leer" },
     ],
   },
@@ -215,6 +224,7 @@ const pageTitles: Record<string, string> = {
   "/dashboard/paquetes": "Paquetes",
   "/dashboard/promociones": "Promociones",
   "/dashboard/inventario/productos": "Productos",
+  "/dashboard/inventario/categorias": "Categorías de productos",
   "/dashboard/inventario/lotes": "Lotes y existencias",
   "/dashboard/inventario/movimientos": "Movimientos de inventario",
   "/dashboard/ventas/notas": "Notas de venta",
@@ -248,11 +258,11 @@ export function DashboardShell({
     ? "Empresa"
     : pathname === "/dashboard/horarios-atencion"
       ? "Horarios de atención"
-    : pathname === "/dashboard/servicios"
-      ? "Catálogo"
       : pathname === "/dashboard/documentos"
         ? "Documentos"
         : null;
+  const attentionSection = pathname === "/dashboard/servicios" ? "Catálogo" : null;
+  const sectionLabel = attentionSection || configurationSection;
   const currentSearch = useSearchParams().toString();
   const [menuOpen, setMenuOpen] = useState(false);
   const fullName = [
@@ -284,7 +294,7 @@ export function DashboardShell({
           <Brand
             inverse
             name={company.name}
-            subtitle="Gestión integral"
+            subtitle={company.subtitle}
             logoSrc={company.hasLogo ? "/api/company-brand/logo" : undefined}
           />
           <button
@@ -327,7 +337,7 @@ export function DashboardShell({
           </div>
         </header>
         <header className="app-topbar">
-          <div className={`topbar-title${pathname === "/dashboard/agenda" ? " topbar-title--prominent" : ""}${configurationSection ? " topbar-title--configuration" : ""}`}>
+          <div className={`topbar-title${pathname === "/dashboard/agenda" ? " topbar-title--prominent" : ""}${sectionLabel ? " topbar-title--configuration" : ""}`}>
             <button
               type="button"
               className="menu-button"
@@ -337,10 +347,10 @@ export function DashboardShell({
               <MenuIcon />
             </button>
             <div>
-              {configurationSection ? (
+              {sectionLabel ? (
                 <>
-                  <strong>Configuración</strong>
-                  <span>{configurationSection}</span>
+                  <strong>{attentionSection ? "Atención" : "Configuración"}</strong>
+                  <span>{sectionLabel}</span>
                 </>
               ) : (
                 <>

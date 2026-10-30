@@ -9,6 +9,8 @@ type PublicCompanyResponse = {
   logo_disponible?: unknown;
   eslogan_principal?: unknown;
   titulo_login?: unknown;
+  subtitulo_panel?: unknown;
+  texto_superior_login?: unknown;
   descripcion_corta?: unknown;
   fondo_login_disponible?: unknown;
   fondo_panel_login_disponible?: unknown;
@@ -18,6 +20,8 @@ const FALLBACK_IDENTITY: CompanyBranding = {
   name: "SPA",
   tagline: "Cuidar de cada paciente comienza con una mejor organización.",
   loginTitle: "Ingresa a tu espacio",
+  subtitle: "Gestión integral",
+  loginEyebrow: "Tu bienestar, nuestra pasión",
   shortDescription:
     "Gestiona tratamientos, historias y seguimiento desde un espacio pensado para acompañar el bienestar de tus pacientes.",
   hasLogo: false,
@@ -51,6 +55,11 @@ export const getPublicCompanyIdentity = cache(async (): Promise<CompanyBranding>
         FALLBACK_IDENTITY.tagline,
       ),
       loginTitle: safeText(data.titulo_login, FALLBACK_IDENTITY.loginTitle),
+      subtitle: safeText(data.subtitulo_panel, FALLBACK_IDENTITY.subtitle),
+      loginEyebrow: safeText(
+        data.texto_superior_login,
+        FALLBACK_IDENTITY.loginEyebrow,
+      ),
       shortDescription: safeOptionalText(data.descripcion_corta),
       hasLogo: Boolean(name && data.logo_disponible === true),
       hasLoginBackground: Boolean(

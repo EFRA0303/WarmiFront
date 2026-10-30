@@ -33,6 +33,8 @@ async function mutate(path: string, method: "POST" | "PATCH" | "DELETE", body?: 
     return failure("No pudimos conectar con el servidor.");
   }
   revalidatePath("/dashboard/servicios");
+  revalidatePath("/dashboard/inventario/categorias");
+  revalidatePath("/dashboard/inventario/productos");
   revalidatePath("/dashboard/tratamientos");
   revalidatePath("/dashboard/agenda");
   return null;

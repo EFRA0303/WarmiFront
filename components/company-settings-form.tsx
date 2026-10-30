@@ -186,11 +186,11 @@ function CompanyLoginPreviewScene({
             )}
             <div>
               <strong>{companyName}</strong>
-              <small>ESTÉTICA &amp; BIENESTAR</small>
+              <small>{(company?.subtitulo_panel || "Gestión integral").toUpperCase()}</small>
             </div>
           </div>
           <div className="company-login-preview__message">
-            <span>TU BIENESTAR, NUESTRA PASIÓN</span>
+            <span>{(company?.texto_superior_login || "Tu bienestar, nuestra pasión").toUpperCase()}</span>
             <h4>
               <span>{tagline.lead}</span>
               {tagline.accent && <em>{tagline.accent}</em>}
@@ -225,6 +225,7 @@ function CompanyLoginPreviewScene({
             {loginTitle.lead}{" "}
             <em>{loginTitle.accent}</em>
           </h4>
+          <small className="company-login-preview__subtitle">{(company?.subtitulo_panel || "Gestión integral").toUpperCase()}</small>
           <p>
             Usa tus credenciales para continuar en <strong>{companyName}</strong>.
           </p>
@@ -473,8 +474,10 @@ export function CompanySettingsForm({
     label: string;
     type?: string;
     required?: boolean;
+    placeholder?: string;
   }> = [
     { name: "nombre_comercial", label: "Nombre comercial", required: true },
+    { name: "subtitulo_panel", label: "Subtítulo (menú y login)", placeholder: "Ej. Gestión integral" },
     { name: "razon_social", label: "Razón social" },
     { name: "nit", label: "NIT" },
     { name: "actividad_economica", label: "Actividad económica" },
@@ -508,14 +511,15 @@ export function CompanySettingsForm({
               <div><h3>Información institucional</h3><p>Datos comerciales, fiscales y de contacto.</p></div>
             </header>
           <div className="session-grid">
-            {fields.map(({ name, label, type = "text", required }) => (
+            {fields.map(({ name, label, type = "text", required, placeholder }) => (
               <label key={name}>
                 <span>{label}{required ? " *" : ""}</span>
                 <input
                   name={name}
                   type={type}
                   required={required}
-                  maxLength={name === "actividad_economica" ? 180 : undefined}
+                  maxLength={name === "actividad_economica" ? 180 : name === "subtitulo_panel" ? 40 : undefined}
+                  placeholder={placeholder}
                   defaultValue={String(
                     company?.[name] ?? "",
                   )}
@@ -554,15 +558,21 @@ export function CompanySettingsForm({
             <div className="session-grid">
               <label className="session-wide">
                 <span>Eslogan principal</span>
-                <input name="eslogan_principal" maxLength={180} defaultValue={company?.eslogan_principal ?? ""} placeholder="Ej. Cuida de ti, por dentro y por fuera" />
+                <textarea name="eslogan_principal" className="company-slogan-input" maxLength={180} rows={4} defaultValue={company?.eslogan_principal ?? ""} placeholder={"Ej.\nCuida de ti,\npor dentro y\npor fuera."} />
+                <small className="company-field-hint">Cada línea que escribas se verá en un renglón aparte en la portada. La parte después de la primera coma se resalta con el color de la marca.</small>
                 <FieldError state={state} name="eslogan_principal" />
+              </label>
+              <label>
+                <span>Texto superior del login</span>
+                <input name="texto_superior_login" maxLength={60} defaultValue={company?.texto_superior_login ?? ""} placeholder="Ej. Tu bienestar, nuestra pasión" />
+                <FieldError state={state} name="texto_superior_login" />
               </label>
               <label>
                 <span>Título destacado del login</span>
                 <input name="titulo_login" maxLength={180} defaultValue={company?.titulo_login ?? ""} placeholder="Ej. Ingresa a tu espacio" />
                 <FieldError state={state} name="titulo_login" />
               </label>
-              <label>
+              <label className="session-wide">
                 <span>Descripción corta</span>
                 <textarea name="descripcion_corta" maxLength={320} rows={3} defaultValue={company?.descripcion_corta ?? ""} placeholder="Describe brevemente la experiencia de tu empresa." />
                 <FieldError state={state} name="descripcion_corta" />

@@ -51,12 +51,9 @@ export function LoginForm() {
         )}
       </div>
 
-      <div className="field-group">
+      <div className="field-group field-group--password">
         <div className="field-label-row">
           <label htmlFor="contrasena">Contraseña</label>
-          <button type="button" className="forgot-password-link" onClick={() => recoveryDialogRef.current?.open()}>
-            ¿Olvidaste tu contraseña?
-          </button>
         </div>
         <div
           className={`field-control ${state.fieldErrors?.contrasena ? "field-control--error" : ""}`}
@@ -85,6 +82,9 @@ export function LoginForm() {
             {showPassword ? <EyeOffIcon /> : <EyeIcon />}
           </button>
         </div>
+        <button type="button" className="forgot-password-link" onClick={() => recoveryDialogRef.current?.open()}>
+          ¿Olvidaste tu contraseña?
+        </button>
         {state.fieldErrors?.contrasena && (
           <p id="password-error" className="field-error">
             {state.fieldErrors.contrasena}

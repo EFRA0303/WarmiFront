@@ -182,8 +182,10 @@ export async function saveCompany(
     direccion: text(d, "direccion") || undefined,
     sitio_web: text(d, "sitio_web") || undefined,
     moneda: text(d, "moneda") || "BOB",
-    eslogan_principal: text(d, "eslogan_principal") || null,
+    eslogan_principal: text(d, "eslogan_principal").replace(/\r\n?/g, "\n") || null,
     titulo_login: text(d, "titulo_login") || null,
+    subtitulo_panel: text(d, "subtitulo_panel") || null,
+    texto_superior_login: text(d, "texto_superior_login") || null,
     descripcion_corta: text(d, "descripcion_corta") || null,
   };
   const token = await getSessionToken();

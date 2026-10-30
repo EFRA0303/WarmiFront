@@ -93,7 +93,7 @@
   margin-bottom: 26px;
   color: rgba(255, 255, 255, 0.86);
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(0.67rem, 0.9vw, 0.88rem);
+  font-size: clamp(0.74rem, 1vw, 0.97rem);
   letter-spacing: 0.34em;
 }
 
@@ -108,19 +108,24 @@
 
 .hero-message h1 {
   display: flex;
-  max-width: 620px;
+  max-width: 910px;
   flex-direction: column;
   margin: 0;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(2.75rem, 4.45vw, 4.85rem);
+  font-size: clamp(4.15rem, 6.6vw, 7.3rem);
   font-weight: 400;
   letter-spacing: -0.055em;
   line-height: 0.98;
   text-wrap: balance;
 }
 
+.hero-message h1 span,
 .hero-message h1 em {
-  max-width: 430px;
+  white-space: pre-line;
+}
+
+.hero-message h1 em {
+  max-width: 680px;
   margin-top: 7px;
   color: var(--login-primary);
   font-weight: 400;
@@ -266,6 +271,16 @@
 
 .login-heading h2 em { color: var(--login-primary); font-style: normal; }
 
+.login-heading__subtitle {
+  display: block;
+  margin-top: 10px;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+}
+
 .login-heading > p {
   margin: 15px 0 0;
   color: rgba(255, 255, 255, 0.76);
@@ -287,7 +302,17 @@
 .field-label-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
 .field-label-row span { color: var(--login-muted); font-size: 0.72rem; }
 
+.field-group--password { position: relative; }
+.field-label-row { min-height: 1.25rem; }
+
 .forgot-password-link {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  height: 1.25rem;
+  align-items: center;
+  padding: 0;
   cursor: pointer;
   border: 0;
   background: transparent;
@@ -528,7 +553,7 @@
   .hero-message { margin-top: clamp(30px, 6svh, 50px); }
   .login-hero .hero-eyebrow { margin-bottom: 20px; }
   .login-hero .hero-eyebrow::after { margin-top: 16px; }
-  .hero-message h1 { font-size: clamp(2.5rem, 7svh, 3.75rem); }
+  .hero-message h1 { font-size: clamp(3.75rem, 10.4svh, 5.6rem); }
   .hero-message > p { margin-top: 18px; font-size: 1rem; }
   .login-panel { padding: clamp(16px, 3svh, 26px) clamp(24px, 3vw, 48px); }
   .login-card {
@@ -573,7 +598,6 @@
   .login-company-logo img { width: 100px; height: 100px; }
   .login-heading h2 { font-size: 2rem; }
   .login-form { margin-top: 28px; }
-  .field-label-row { align-items: flex-start; flex-direction: column; gap: 7px; }
   .login-security { align-items: flex-start; }
   .recovery-dialog__content { padding: 21px; }
   .recovery-dialog__content footer { flex-direction: column-reverse; }

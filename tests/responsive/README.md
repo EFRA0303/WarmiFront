@@ -11,6 +11,9 @@ La API de prueba rechaza todas las escrituras. No se envían formularios.
 - Tamaños: 1366 × 600, 1366 × 768, 1280 × 600, 1024 × 640, 768 × 900,
   390 × 844 y 1920 × 1080.
 - Desbordamiento horizontal de página y contención de tablas.
+- En Áreas y categorías, alineación de las pestañas con Nueva área a la derecha.
+- En Servicios y Mediciones, alineación y orden de pestañas → Mediciones → búsqueda → botón de alta
+  cuando hay espacio, y altura del buscador al apilar controles en móvil.
 - Apertura/cierre de formularios de creación y edición disponibles en los datos
   ficticios, límites de las ventanas y acceso a sus controles por desplazamiento.
 

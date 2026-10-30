@@ -24,7 +24,7 @@ const valid = new Set(["ACTIVO", "BAJA"]);
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 const columns = [
   { key: "product", label: "Producto" },
-  { key: "unit", label: "Unidad" },
+  { key: "presentation", label: "Presentación" },
   { key: "kind", label: "Uso" },
   { key: "stock", label: "Stock actual" },
   { key: "minimum", label: "Stock mínimo" },
@@ -32,6 +32,21 @@ const columns = [
   { key: "status", label: "Estado" },
   { key: "actions", label: "Acciones" },
 ];
+const unitSymbols: Record<string, string> = {
+  UNIDAD: "unid.",
+  G: "g",
+  KG: "kg",
+  ML: "ml",
+  L: "l",
+  CM: "cm",
+  M: "m",
+  PAR: "par",
+  PAQUETE: "paquete",
+};
+const whole = (value: string | number) =>
+  Math.round(Number(value) || 0).toLocaleString("es-BO");
+const content = (amount: string | number, unit: string) =>
+  `${Number(amount).toLocaleString("es-BO", { maximumFractionDigits: 3 })} ${unitSymbols[unit] ?? unit.toLowerCase()}`;
 export default async function Page({
   searchParams,
 }: {
@@ -123,8 +138,16 @@ export default async function Page({
                             </div>
                           </div>
                         </td>
-                        <td data-directory-column="unit">
-                          {item.unidad_medida}
+                        <td data-directory-column="presentation">
+                          <div className="directory-stacked">
+                            <strong>
+                              {content(
+                                item.contenido_presentacion,
+                                item.unidad_medida,
+                              )}
+                            </strong>
+                            <small>{item.presentacion}</small>
+                          </div>
                         </td>
                         <td data-directory-column="kind">
                           <div className="inventory-kinds">
@@ -136,13 +159,11 @@ export default async function Page({
                           <strong
                             className={`inventory-stock ${low ? "inventory-low" : ""}`}
                           >
-                            {Number(item.stock_actual).toLocaleString("es-BO")}{" "}
-                            {item.unidad_medida}
+                            {whole(item.stock_actual)}
                           </strong>
                         </td>
                         <td data-directory-column="minimum">
-                          {Number(item.stock_minimo).toLocaleString("es-BO")}{" "}
-                          {item.unidad_medida}
+                          {whole(item.stock_minimo)}
                         </td>
                         <td data-directory-column="lots">{item.lotes}</td>
                         <td data-directory-column="status">

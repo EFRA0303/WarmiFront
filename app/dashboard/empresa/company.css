@@ -750,7 +750,7 @@
 
 .company-login-preview__message {
   display: flex;
-  max-width: 390px;
+  max-width: 585px;
   flex-direction: column;
   margin-top: clamp(32px, 5vw, 70px);
 }
@@ -774,14 +774,19 @@
 
 .company-login-preview__message h4 {
   display: flex;
-  max-width: 390px;
+  max-width: 450px;
   flex-direction: column;
   margin: 17px 0 0;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(1.35rem, 3vw, 3rem);
+  font-size: clamp(1.2rem, 2.5vw, 2.5rem);
   font-weight: 400;
   letter-spacing: -0.04em;
   line-height: 0.98;
+}
+
+.company-login-preview__message h4 span,
+.company-login-preview__message h4 em {
+  white-space: pre-line;
 }
 
 .company-login-preview__message h4 em {
@@ -863,6 +868,15 @@
 .company-login-preview__card h4 em {
   color: #2dd4bf;
   font-style: normal;
+}
+
+.company-login-preview__subtitle {
+  display: block;
+  margin-top: 5px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: clamp(0.38rem, 0.55vw, 0.5rem);
+  font-weight: 650;
+  letter-spacing: 0.22em;
 }
 
 .company-login-preview__card > p {
@@ -1039,8 +1053,8 @@
 }
 
 .company-login-preview--editor .company-login-preview__message h4 {
-  max-width: 360px;
-  font-size: clamp(1.65rem, 3vw, 3rem);
+  max-width: 420px;
+  font-size: clamp(1.5rem, 2.6vw, 2.6rem);
 }
 
 .company-login-preview--editor .company-login-preview__access {
@@ -1196,4 +1210,14 @@
   .company-profile-card__details {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
+.company-slogan-input {
+  min-height: 112px;
+  line-height: 1.5;
+}
+
+.company-field-hint {
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.45;
 }

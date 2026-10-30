@@ -64,8 +64,8 @@ export async function saveProduct(
   if (!nombre) errors.nombre = "Ingresa el nombre.";
   if (!Number.isInteger(categoria) || categoria < 1) errors.id_categoria_producto = "Selecciona una categoría.";
   if (!unidad) errors.unidad_medida = "Ingresa la unidad de medida.";
-  if (!numeric(stock)) errors.stock_minimo = "Ingresa un stock mínimo válido.";
-  if (!/^\d+(?:\.\d{1,3})?$/.test(contenido) || Number(contenido) <= 0) errors.contenido_presentacion = "Ingresa un contenido mayor a cero.";
+  if (!/^\d+$/.test(stock)) errors.stock_minimo = "Ingresa un stock mínimo entero, sin decimales.";
+  if (!/^\d+$/.test(contenido) || Number(contenido) <= 0) errors.contenido_presentacion = "Ingresa un contenido entero mayor a cero.";
   if (!esInsumo && !esVendible) errors.es_insumo = "Selecciona al menos un uso para el producto.";
   if (esVendible && (!numeric(precio) || Number(precio) < 0)) errors.precio_venta = "Ingresa un precio de venta válido.";
   if (image && image.size > 5 * 1024 * 1024)

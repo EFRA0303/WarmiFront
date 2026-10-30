@@ -96,11 +96,21 @@ async function main() {
           const main = document.querySelector('.app-main');
           const topbar = document.querySelector('.app-topbar').getBoundingClientRect();
           const visible = el => el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true });
+          const services = main.querySelector('.catalog-manager--listing');
+          const structure = main.querySelector('.catalog-manager--structure');
+          const rect = selector => {
+            const element = (services || structure)?.querySelector(selector);
+            if (!element) return null;
+            const box = element.getBoundingClientRect();
+            return { left: box.left, right: box.right, centerY: box.top + box.height / 2, height: box.height };
+          };
           return { pathname: location.pathname, width: innerWidth, height: innerHeight, clientWidth: document.documentElement.clientWidth,
             scrollWidth: document.documentElement.scrollWidth, topbarHeight: topbar.height,
             title: main.querySelector('h1,h2')?.textContent,
             error: /Application error|No fue posible|No pudimos conectar|No tienes permiso/.test(main.innerText),
             tables: [...main.querySelectorAll('table')].filter(visible).length,
+            serviceControls: services ? { workspaceWidth: main.clientWidth, tabs: rect('.catalog-tabs'), measures: rect('.catalog-measures-shortcut'), measuresInTabs: [...services.querySelectorAll('.catalog-tabs button')].some(button => button.textContent.includes('Mediciones')), measuresActive: services.querySelector('.catalog-measures-shortcut')?.getAttribute('aria-current') === 'page', search: rect('.catalog-toolbar > label'), create: rect('.catalog-create-actions > button') } : null,
+            structureControls: structure ? { workspaceWidth: main.clientWidth, tabs: rect('.catalog-tabs'), create: rect('.catalog-create-actions > button') } : null,
             overflow: [...main.querySelectorAll('*')].filter(visible).filter(el => {
               const box = el.getBoundingClientRect();
               if (box.right <= document.documentElement.clientWidth + 1) return false;
@@ -114,6 +124,32 @@ async function main() {
         check(!metrics.error, `${route}: no muestra los datos ficticios`);
         check(metrics.pathname === route.split('?')[0], `${route}: redirección inesperada a ${metrics.pathname}`);
         check(metrics.overflow.length === 0, `${route} ${width}x${height}: contenido recortado ${metrics.overflow.join(', ')}`);
+        if (metrics.structureControls) {
+          const { workspaceWidth, tabs, create } = metrics.structureControls;
+          if (workspaceWidth > 620 && create) {
+            check(Math.abs(tabs.centerY - create.centerY) <= 1, `${route} ${width}x${height}: Nueva área no está alineado con las pestañas`);
+            check(tabs.right <= create.left + 1, `${route} ${width}x${height}: Nueva área debe estar a la derecha de las pestañas`);
+          }
+        }
+        if (metrics.serviceControls) {
+          const { workspaceWidth, tabs, measures, measuresInTabs, measuresActive, search, create } = metrics.serviceControls;
+          check(Boolean(measures), `${route} ${width}x${height}: falta el botón independiente de Mediciones`);
+          check(!measuresInTabs, `${route} ${width}x${height}: Mediciones no debe estar dentro del bloque de pestañas`);
+          check(measuresActive === (route.includes('tab=measures')), `${route} ${width}x${height}: estado activo incorrecto de Mediciones`);
+          if (workspaceWidth > 900) {
+            check(Math.abs(tabs.centerY - search.centerY) <= 1, `${route} ${width}x${height}: pestañas y búsqueda no están alineadas`);
+            check(tabs.right <= search.left + 1, `${route} ${width}x${height}: la búsqueda debe ir después de las pestañas`);
+            if (measures) {
+              check(Math.abs(tabs.centerY - measures.centerY) <= 1, `${route} ${width}x${height}: Mediciones no está alineado`);
+              check(tabs.right <= measures.left + 1 && measures.right <= search.left + 1, `${route} ${width}x${height}: Mediciones debe estar entre las pestañas y la búsqueda`);
+            }
+            if (create) {
+              check(Math.abs(search.centerY - create.centerY) <= 1, `${route} ${width}x${height}: el botón de alta no está alineado`);
+              check(search.right <= create.left + 1, `${route} ${width}x${height}: el botón debe ir después de la búsqueda`);
+            }
+          }
+          if (width <= 760) check(search.height >= 44 && search.height <= 50, `${route} ${width}x${height}: altura incorrecta de la búsqueda en móvil`);
+        }
         results.push({ route, viewport: [width, height], ...metrics });
         if (width === 390) await screenshot(route.replaceAll(/[^a-z0-9]+/gi, '-') + '-mobile');
       }

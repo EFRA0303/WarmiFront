@@ -59,7 +59,7 @@ function ServiceForm({ item, categories, close }: { item?: CatalogService; categ
     <label><span>Categoría *</span><select name="id_categoria" defaultValue={item?.id_categoria ?? ""} required><option value="">Seleccionar categoría</option>{activeCategories.map((category) => <option key={category.id_categoria} value={category.id_categoria}>{category.area?.nombre ? `${category.area.nombre} · ` : ""}{category.nombre}</option>)}</select><ErrorText state={state} name="id_categoria" /></label>
     <label><span>Nombre *</span><input name="nombre" defaultValue={item?.nombre ?? ""} maxLength={100} required /><ErrorText state={state} name="nombre" /></label>
     <label><span>Duración en minutos *</span><input name="duracion_minutos" type="number" min="1" max="1440" defaultValue={item?.duracion_minutos ?? 60} required /><ErrorText state={state} name="duracion_minutos" /></label>
-    <label><span>Precio por sesión (Bs) *</span><input name="precio" type="number" min="0" step="0.01" defaultValue={item?.precio ?? 0} required /><ErrorText state={state} name="precio" /></label>
+    <label><span>Precio total del servicio (Bs) *</span><input name="precio" type="number" min="0" step="0.01" defaultValue={item?.precio ?? 0} required /><ErrorText state={state} name="precio" /></label>
     {item && <label><span>Estado *</span><select name="estado" defaultValue={item.estado}><option value="ACTIVO">Activo</option><option value="BAJA">Baja</option></select></label>}
     <label className="catalog-form__wide catalog-check"><input name="requiere_valoracion" type="checkbox" defaultChecked={item?.requiere_valoracion} /><span><strong>Requiere valoración previa</strong><small>Se mostrará esta condición al indicar el servicio.</small></span></label>
     <label className="catalog-form__wide"><span>Descripción</span><textarea name="descripcion" maxLength={255} rows={4} defaultValue={item?.descripcion ?? ""} /></label>
@@ -110,6 +110,8 @@ function CatalogStructure({ data, canCreate, canEdit, edit }: { data: ServiceCat
       <div><span>1</span><strong>Área</strong><small>Agrupa una especialidad o línea principal.</small></div>
       <i aria-hidden="true">→</i>
       <div><span>2</span><strong>Categorías</strong><small>Ordenan los servicios que pertenecen al área.</small></div>
+      <i aria-hidden="true">→</i>
+      <div><span>3</span><strong>Servicios</strong><small>Define las atenciones de cada categoría.</small></div>
     </div>
     <div className="catalog-area-grid">
       {data.areas.map((area) => {
@@ -136,7 +138,7 @@ function CatalogStructure({ data, canCreate, canEdit, edit }: { data: ServiceCat
   </div>;
 }
 
-export function ServiceCatalogManager({ data, canCreate, canEdit, initialTab = "services" }: { data: ServiceCatalogData; canCreate: boolean; canEdit: boolean; initialTab?: Tab }) {
+export function ServiceCatalogManager({ data, canCreate, canEdit, initialTab = "structure", view = "catalog" }: { data: ServiceCatalogData; canCreate: boolean; canEdit: boolean; initialTab?: Tab; view?: "catalog" | "product-categories" }) {
   const [tab, setTab] = useState<Tab>(initialTab);
   const [search, setSearch] = useState("");
   const [editor, setEditor] = useState<Editor>(null);
@@ -144,10 +146,17 @@ export function ServiceCatalogManager({ data, canCreate, canEdit, initialTab = "
   const services = useMemo(() => data.services.filter((item) => normalize(`${item.nombre} ${item.descripcion ?? ""} ${item.categoria?.nombre ?? ""} ${item.categoria?.area?.nombre ?? ""}`).includes(term)), [data.services, term]);
   const measures = useMemo(() => data.measures.filter((item) => normalize(`${item.nombre} ${item.unidad ?? ""}`).includes(term)), [data.measures, term]);
   const productCategories = useMemo(() => data.productCategories.filter((item) => normalize(`${item.nombre} ${item.descripcion ?? ""}`).includes(term)), [data.productCategories, term]);
+  const isListingView = view === "catalog" && (tab === "services" || tab === "measures");
+  const isStructureView = view === "catalog" && tab === "structure";
+  const openMeasures = () => { setTab("measures"); setSearch(""); };
   const close = () => setEditor(null);
   const newItem = () => setEditor({ kind: tab === "services" ? "service" : tab === "measures" ? "measure" : tab === "product-categories" ? "product-category" : "area" });
-  return <div className="catalog-manager">
-    <div className="catalog-tabs"><button className={tab === "services" ? "active" : ""} onClick={() => { setTab("services"); setSearch(""); }}>Servicios <span>{data.services.length}</span></button><button className={tab === "measures" ? "active" : ""} onClick={() => { setTab("measures"); setSearch(""); }}>Mediciones <span>{data.measures.length}</span></button><button className={tab === "structure" ? "active" : ""} onClick={() => { setTab("structure"); setSearch(""); }} title={`${data.areas.length} áreas y ${data.categories.length} categorías`}>Áreas y categorías <span>{data.areas.length}/{data.categories.length}</span></button><button className={tab === "product-categories" ? "active" : ""} onClick={() => { setTab("product-categories"); setSearch(""); }}>Categorías de productos <span>{data.productCategories.length}</span></button></div>
+  return <div className={`catalog-manager${isListingView ? " catalog-manager--listing" : isStructureView ? " catalog-manager--structure" : ""}`}>
+    {view === "catalog" && <div className="catalog-tabs">
+      <button className={tab === "structure" ? "active" : ""} onClick={() => { setTab("structure"); setSearch(""); }} title={`${data.areas.length} áreas y ${data.categories.length} categorías`}>Áreas y categorías <span>{data.areas.length}/{data.categories.length}</span></button>
+      <button className={tab === "services" ? "active" : ""} onClick={() => { setTab("services"); setSearch(""); }}>Servicios <span>{data.services.length}</span></button>
+    </div>}
+    {isListingView && <button className="catalog-measures-shortcut" type="button" onClick={openMeasures} aria-current={tab === "measures" ? "page" : undefined} title="Administrar tipos de medida"><SettingsIcon />Mediciones <span>{data.measures.length}</span></button>}
     <div className="catalog-toolbar">{tab !== "structure" && <label><SearchIcon /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={tab === "services" ? "Buscar servicio, categoría o área..." : tab === "measures" ? "Buscar medición o unidad..." : "Buscar categoría de producto..."} /></label>}{canCreate && <div className="catalog-create-actions"><button className="directory-primary" type="button" onClick={newItem}><PlusIcon />{tab === "services" ? "Nuevo servicio" : tab === "measures" ? "Nueva medición" : tab === "product-categories" ? "Nueva categoría" : "Nueva área"}</button></div>}</div>
     {tab === "services" && <div className="catalog-table-card"><table><thead><tr><th>Servicio</th><th>Área / categoría</th><th>Duración</th><th>Precio</th><th>Mediciones</th><th>Valoración</th><th>Estado</th>{canEdit && <th>Acciones</th>}</tr></thead><tbody>{services.map((service) => <tr key={service.id_servicio}><td><strong>{service.nombre}</strong><small>{service.descripcion || "Sin descripción"}</small></td><td><strong>{service.categoria?.area?.nombre || "Sin área"}</strong><small>{service.categoria?.nombre || `Categoría #${service.id_categoria}`}</small></td><td><strong>{service.duracion_minutos} min</strong></td><td><strong>Bs {Number(service.precio).toFixed(2)}</strong></td><td><button className="catalog-measure-count" type="button" disabled={!canEdit} onClick={() => setEditor({ kind: "assign", item: service })}>{service.medidas.length} configuradas</button></td><td>{service.requiere_valoracion ? "Sí" : "No"}</td><td><Status value={service.estado} /></td>{canEdit && <td><div className="catalog-row-actions"><button onClick={() => setEditor({ kind: "assign", item: service })} title="Configurar mediciones"><SettingsIcon /></button><button onClick={() => setEditor({ kind: "service", item: service })} title="Editar servicio"><EditIcon /></button></div></td>}</tr>)}</tbody></table>{!services.length && <div className="catalog-empty">No encontramos servicios con esos criterios.</div>}</div>}
     {tab === "measures" && <div className="catalog-table-card"><table><thead><tr><th>Medición</th><th>Unidad</th><th>Servicios asociados</th><th>Estado</th>{canEdit && <th>Acciones</th>}</tr></thead><tbody>{measures.map((measure) => { const count = data.services.filter((service) => service.medidas.some((item) => item.id_tipo_medida === measure.id_tipo_medida)).length; return <tr key={measure.id_tipo_medida}><td><strong>{measure.nombre}</strong></td><td>{measure.unidad || "Sin unidad"}</td><td>{count} servicios</td><td><Status value={measure.estado} /></td>{canEdit && <td><div className="catalog-row-actions"><button onClick={() => setEditor({ kind: "measure", item: measure })} title="Editar medición"><EditIcon /></button></div></td>}</tr>; })}</tbody></table>{!measures.length && <div className="catalog-empty">No encontramos mediciones con esos criterios.</div>}</div>}

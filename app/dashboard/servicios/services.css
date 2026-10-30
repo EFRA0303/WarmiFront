@@ -11,6 +11,40 @@
 .catalog-toolbar input { width: 100%; border: 0; outline: 0; background: transparent; color: var(--foreground); font: inherit; font-size: .75rem; }
 .catalog-create-actions { display: flex; gap: 9px; margin-left: auto; }
 .catalog-create-actions svg { width: 15px; }
+
+/* En Áreas y categorías, Nueva área queda alineado a la derecha de las pestañas. */
+.app-shell .catalog-manager--structure { display: grid; min-width: 0; grid-template-columns: max-content minmax(0, 1fr); align-items: center; column-gap: 12px; }
+.app-shell .catalog-manager--structure > .catalog-toolbar { min-width: 0; justify-content: center; }
+.app-shell .catalog-manager--structure > :not(.catalog-tabs):not(.catalog-toolbar) { grid-column: 1 / -1; }
+
+@container workspace (max-width: 620px) {
+  .app-shell .catalog-manager--structure { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Servicios y Mediciones comparten la fila; Mediciones conserva su botón independiente. */
+.app-shell .catalog-manager--listing { display: grid; min-width: 0; grid-template-columns: max-content max-content minmax(0, 1fr); align-items: center; column-gap: 12px; }
+.app-shell .catalog-manager--listing > .catalog-toolbar { min-width: 0; flex-wrap: nowrap; }
+.app-shell .catalog-manager--listing > .catalog-toolbar > label { width: auto; min-width: 0; flex: 1 1 0; }
+.app-shell .catalog-manager--listing .catalog-create-actions { flex: 0 0 auto; margin-left: 0; }
+.app-shell .catalog-manager--listing > :not(.catalog-tabs):not(.catalog-measures-shortcut):not(.catalog-toolbar) { grid-column: 1 / -1; }
+.catalog-measures-shortcut { display: inline-flex; height: 45px; cursor: pointer; align-items: center; justify-content: center; gap: 8px; padding: 0 12px; border: 1px solid color-mix(in srgb, #8b5cf6 50%, var(--border)); border-radius: 13px; background: color-mix(in srgb, #8b5cf6 16%, var(--surface)); color: color-mix(in srgb, #8b5cf6 62%, var(--foreground)); font: inherit; font-size: .75rem; font-weight: 800; white-space: nowrap; transition: background 150ms ease, border-color 150ms ease; }
+.catalog-measures-shortcut:hover { border-color: #8b5cf6; background: color-mix(in srgb, #8b5cf6 23%, var(--surface)); }
+.catalog-measures-shortcut[aria-current="page"] { border-color: #8b5cf6; background: color-mix(in srgb, #8b5cf6 23%, var(--surface)); box-shadow: inset 0 0 0 1px #8b5cf6; }
+.catalog-measures-shortcut:focus-visible { outline-color: #8b5cf6; }
+.catalog-measures-shortcut > svg { width: 16px; height: 16px; flex: 0 0 auto; }
+.catalog-measures-shortcut > span { display: grid; min-width: 21px; height: 21px; place-items: center; padding-inline: 5px; border-radius: 999px; background: color-mix(in srgb, #8b5cf6 20%, var(--surface)); font-size: .65rem; }
+
+@container workspace (max-width: 900px) {
+  .app-shell .catalog-manager--listing { grid-template-columns: max-content minmax(0, 1fr); }
+  .app-shell .catalog-manager--listing > .catalog-measures-shortcut { justify-self: start; }
+  .app-shell .catalog-manager--listing > .catalog-toolbar { grid-column: 1 / -1; }
+}
+
+@media (max-width: 560px) {
+  .app-shell .catalog-manager--listing { grid-template-columns: minmax(0, 1fr); }
+  .app-shell .catalog-manager--listing > .catalog-measures-shortcut { justify-self: stretch; }
+}
+
 .catalog-table-card { position: relative; overflow-x: auto; border: 1px solid var(--border); border-radius: 20px; background: var(--surface); }
 .catalog-table-card table { width: 100%; min-width: 980px; border-collapse: collapse; }
 .catalog-table-card th { height: 46px; padding: 0 17px; border-bottom: 1px solid var(--border); background: var(--surface-soft); color: var(--muted); font-size: .64rem; letter-spacing: .08em; text-align: left; text-transform: uppercase; }
@@ -31,7 +65,7 @@
 .catalog-empty { padding: 35px; color: var(--muted); font-size: .75rem; text-align: center; }
 .catalog-structure { display: flex; flex-direction: column; gap: 16px; }
 .catalog-structure__guide { display: flex; align-items: center; gap: 14px; padding: 14px 17px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface-soft); }
-.catalog-structure__guide > div { display: grid; min-width: 0; grid-template-columns: auto auto; align-items: center; gap: 3px 9px; }
+.catalog-structure__guide > div { display: grid; min-width: 0; flex: 1; grid-template-columns: 25px minmax(0, 1fr); align-items: center; gap: 3px 9px; }
 .catalog-structure__guide > div > span { display: grid; width: 25px; height: 25px; grid-row: 1 / 3; place-items: center; border-radius: 8px; background: var(--primary-soft); color: var(--primary-strong); font-size: .65rem; font-weight: 900; }
 .catalog-structure__guide strong { font-size: .75rem; }
 .catalog-structure__guide small { color: var(--muted); font-size: .64rem; }
@@ -113,6 +147,7 @@
   .catalog-tabs { width: 100%; overflow-x: auto; }
   .catalog-tabs button { flex: 1 0 auto; }
   .catalog-toolbar { align-items: stretch; flex-direction: column; }
+  .app-shell .catalog-manager--listing > .catalog-toolbar > label { width: 100%; flex: none; }
   .catalog-create-actions { width: 100%; margin: 0; }
   .catalog-create-actions button { flex: 1; }
   .catalog-area-grid, .catalog-form__grid { grid-template-columns: 1fr; }
