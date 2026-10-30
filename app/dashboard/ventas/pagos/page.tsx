@@ -14,6 +14,7 @@ import "../../sesiones/sessions.css";
 import "../../inventario/inventory.css";
 import "../../promociones/promotions.css";
 import "../sales.css";
+import "@/components/commerce-workflow.css";
 export const metadata: Metadata = { title: "Pagos" };
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 const statuses: PaymentStatus[] = ["REGISTRADO", "ANULADO"];

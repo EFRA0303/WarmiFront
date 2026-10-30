@@ -62,8 +62,8 @@ export async function createAcquisition(
   const errors: Record<string, string> = {};
   if (!Number.isInteger(patient) || patient < 1)
     errors.id_paciente = "Selecciona un paciente.";
-  if (!new Set(["PAQUETE", "PROMOCION"]).has(type) || !Number.isInteger(id))
-    errors.offer = "Selecciona un paquete o promoción.";
+  if (!new Set(["SERVICIO", "PAQUETE", "PROMOCION"]).has(type) || !Number.isInteger(id) || id < 1)
+    errors.offer = "Selecciona un servicio, paquete o promoción.";
   if (!date) errors.fecha_adquisicion = "Selecciona la fecha.";
   const detalles = [];
   for (let i = 0; i < count; i++) {
@@ -82,6 +82,7 @@ export async function createAcquisition(
     errors.offer = "La oferta no tiene servicios configurados.";
   if (Object.keys(errors).length) return { fieldErrors: errors };
   const body = {
+    clave_operacion: text(d, "clave_operacion"),
     id_paciente: patient,
     id_paquete: type === "PAQUETE" ? id : undefined,
     id_promocion: type === "PROMOCION" ? id : undefined,
@@ -93,15 +94,16 @@ export async function createAcquisition(
     r ??
     done(
       "Adquisición registrada",
-      "Las sesiones ya están disponibles para el paciente.",
+      "Se generó la nota de venta y su saldo. Registra el primer abono en Ventas → Pagos para habilitar la asignación clínica; no se registró ningún pago automático.",
     )
   );
 }
 export async function changeAcquisition(
   id: number,
   estado: AcquisitionStatus,
+  reason: string,
 ): Promise<RegistrationState> {
-  const r = await mutate(`/adquisiciones/${id}`, "PATCH", { estado });
+  const r = await mutate(`/adquisiciones/${id}`, "PATCH", { estado, motivo_anulacion: reason });
   return (
     r ??
     done(

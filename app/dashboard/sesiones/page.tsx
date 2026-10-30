@@ -11,6 +11,8 @@ import { DirectoryTableActions } from "@/components/directory-table-actions";
 import { DynamicSearchInput } from "@/components/dynamic-search-input";
 import { NewSessionDialog, SessionActions } from "@/components/session-dialogs";
 import { SessionStatusFilter } from "@/components/session-controls";
+import { PatientCareNavigation, PatientCareContext, PatientCareContextInputs, PatientCareRecordLinks } from "@/components/patient-care-navigation";
+import { careContext, careHref, careId, type CareContext } from "@/lib/patient-care";
 import { getCurrentUser } from "@/lib/auth";
 import { getSessionOptions, getSessions } from "@/lib/sessions";
 import type { ClinicalSession, SessionStatus } from "@/lib/types";
@@ -58,12 +60,12 @@ const label = (status: SessionStatus) =>
     : status === "FINALIZADA"
       ? "Finalizada"
       : "Cancelada";
-function url(page: number, search: string, estado?: SessionStatus) {
+function url(page: number, search: string, estado?: SessionStatus, context: CareContext = {}) {
   const params = new URLSearchParams();
   if (search) params.set("search", search);
   if (estado) params.set("estado", estado);
   if (page > 1) params.set("page", String(page));
-  return params.size ? `/dashboard/sesiones?${params}` : "/dashboard/sesiones";
+  return careHref("/dashboard/sesiones", context, Object.fromEntries(params));
 }
 
 export default async function SessionsPage({
@@ -72,6 +74,9 @@ export default async function SessionsPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
+  const context = careContext(params);
+  delete context.id_sesion;
+  const requestedAppointmentId = careId(params.atender);
   const rawPage = Number(one(params.page));
   const page = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
   const search = (one(params.search) || "").trim().slice(0, 150);
@@ -79,7 +84,7 @@ export default async function SessionsPage({
     SessionStatus | undefined;
   const estado = rawStatus && statuses.has(rawStatus) ? rawStatus : undefined;
   const [result, options, user] = await Promise.all([
-    getSessions({ page, limit: PAGE_SIZE, search, estado }),
+    getSessions({ page, limit: PAGE_SIZE, search, estado, ...context }),
     getSessionOptions(),
     getCurrentUser(),
   ]);
@@ -111,7 +116,11 @@ export default async function SessionsPage({
     );
   const canCreate = user.permisos.includes("clinica.crear");
   const canEdit = user.permisos.includes("clinica.actualizar");
+  const inContext = (item: { id_paciente: number; id_tratamiento: number }) => (!context.id_paciente || item.id_paciente === context.id_paciente) && (!context.id_tratamiento || item.id_tratamiento === context.id_tratamiento);
+  const scopedOptions = { ...options.value, appointments: options.value.appointments.filter(inContext), treatments: options.value.treatments.filter(inContext) };
+  const defaultAppointmentId = scopedOptions.appointments.find(item => item.id_cita === requestedAppointmentId)?.id_cita;
   const { data, total, limit } = result.value;
+  const requestedSession = requestedAppointmentId ? data.find(item => item.id_cita === requestedAppointmentId) : undefined;
   const pages = Math.max(1, Math.ceil(total / limit));
   const current = Math.min(page, pages);
   return (
@@ -121,15 +130,18 @@ export default async function SessionsPage({
     >
       <header className="directory-heading">
         <div>
-          <span className="page-eyebrow">ATENCIÓN CLÍNICA</span>
-          <h1>Sesiones</h1>
+          <span className="page-eyebrow">SERVICIOS DEL PACIENTE</span>
+          <h1>Sesiones y atención</h1>
           <p>
             Registra la atención realizada y actualiza el avance de cada
-            tratamiento.
+            servicio asignado al paciente.
           </p>
         </div>
-        {canCreate && <NewSessionDialog options={options.value} />}
+        {canCreate && <NewSessionDialog key={`${context.id_paciente ?? "all"}-${context.id_tratamiento ?? "all"}-${defaultAppointmentId ?? "general"}`} options={scopedOptions} defaultAppointmentId={defaultAppointmentId} />}
       </header>
+      <PatientCareNavigation active="sessions" permissions={user.permisos} context={context} />
+      <PatientCareContext context={context} clearPath="/dashboard/sesiones" />
+      {requestedAppointmentId && !defaultAppointmentId && <p className="patient-care-notice">{requestedSession ? `La cita ya tiene una sesión ${requestedSession.estado === "EN_CURSO" ? "en curso" : "registrada"}. Puedes consultar su evolución y sus valoraciones en la lista.` : "La cita solicitada ya no está disponible para iniciar una nueva sesión. Puede estar en curso, haber cambiado de estado o no corresponder a este contexto. Revisa los registros o vuelve a Agenda."}</p>}
       <DirectoryTableActions
         scope="sessions"
         fileName="sesiones"
@@ -138,6 +150,7 @@ export default async function SessionsPage({
       />
       <div className="directory-toolbar">
         <form action="/dashboard/sesiones" method="get">
+          <PatientCareContextInputs context={context} />
           <label className="directory-search">
             <SearchIcon />
             <DynamicSearchInput
@@ -184,8 +197,9 @@ export default async function SessionsPage({
                       <td data-directory-column="service">
                         <div className="directory-stacked">
                           <strong>{session.servicio}</strong>
-                          <small>{session.duracion_minutos} minutos</small>
-                        </div>
+                            <small>{session.duracion_minutos} minutos</small>
+                          </div>
+                          <PatientCareRecordLinks permissions={user.permisos} patientId={session.id_paciente} treatmentId={session.id_tratamiento} sessionId={session.id_sesion} historyId={session.id_historial} />
                       </td>
                       <td data-directory-column="professional">
                         <span
@@ -289,6 +303,7 @@ export default async function SessionsPage({
                     </dd>
                   </div>
                 </dl>
+                <PatientCareRecordLinks permissions={user.permisos} patientId={session.id_paciente} treatmentId={session.id_tratamiento} sessionId={session.id_sesion} historyId={session.id_historial} />
                 {canEdit && (
                   <div
                     className="directory-card-actions"
@@ -314,7 +329,7 @@ export default async function SessionsPage({
                 <Link
                   aria-disabled={current === 1}
                   className={current === 1 ? "disabled" : ""}
-                  href={url(current - 1, search, estado)}
+                  href={url(current - 1, search, estado, context)}
                 >
                   <ChevronLeftIcon />
                 </Link>
@@ -324,7 +339,7 @@ export default async function SessionsPage({
                 <Link
                   aria-disabled={current === pages}
                   className={current === pages ? "disabled" : ""}
-                  href={url(current + 1, search, estado)}
+                  href={url(current + 1, search, estado, context)}
                 >
                   <ChevronRightIcon />
                 </Link>
@@ -344,7 +359,7 @@ export default async function SessionsPage({
             </p>
           </div>
           {(search || estado) && (
-            <Link className="directory-clear" href="/dashboard/sesiones">
+            <Link className="directory-clear" href={careHref("/dashboard/sesiones", context)}>
               Ver todas
             </Link>
           )}

@@ -39,10 +39,12 @@ export function getTreatments(query: {
   limit: number;
   search?: string;
   estado?: TreatmentStatus;
+  id_paciente?: number;
 }) {
   const params = new URLSearchParams({ page: String(query.page), limit: String(query.limit) });
   if (query.search) params.set("search", query.search);
   if (query.estado) params.set("estado", query.estado);
+  if (query.id_paciente) params.set("id_paciente", String(query.id_paciente));
   return treatmentRequest<PaginatedResponse<TreatmentListItem>>(`/clinica/tratamientos?${params}`);
 }
 

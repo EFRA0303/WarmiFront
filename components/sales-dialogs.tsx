@@ -14,6 +14,7 @@ import {
   cancelSaleNote,
   createPayment,
   createSaleNote,
+  deliverSaleProducts,
 } from "@/app/dashboard/ventas/actions";
 import type {
   RegistrationState,
@@ -73,6 +74,10 @@ function Error({ state, name }: { state: RegistrationState; name: string }) {
 }
 export function NewSaleDialog({ options }: { options: SalesOptions }) {
   const [open, setOpen] = useState(false);
+  return <><button className="directory-primary" type="button" onClick={() => setOpen(true)}><PlusIcon />Nueva nota</button>{open && <SaleForm options={options} close={() => setOpen(false)} />}</>;
+}
+function SaleForm({ options, close }: { options: SalesOptions; close: () => void }) {
+  const [operationKey] = useState(() => crypto.randomUUID());
   const [rows, setRows] = useState([0]);
   const [selectedItems, setSelectedItems] = useState<Record<number, string>>({});
   const [prices, setPrices] = useState<Record<number, string>>({});
@@ -80,27 +85,19 @@ export function NewSaleDialog({ options }: { options: SalesOptions }) {
   const [date] = useState(now);
   return (
     <>
-      <button
-        className="directory-primary"
-        type="button"
-        onClick={() => setOpen(true)}
-      >
-        <PlusIcon />
-        Nueva nota
-      </button>
-      {open && (
         <Dialog
-          close={() => setOpen(false)}
+          close={close}
           title="Emitir nota de venta"
-          description="Agrega servicios, productos o paquetes; los totales se calculan en el servidor."
+          description="Productos por presentación. Los servicios, paquetes y promociones se registran en Adquisiciones."
           wide
         >
           <form action={action} className="session-form">
+            <input type="hidden" name="clave_operacion" value={operationKey} />
             <input type="hidden" name="detail_count" value={rows.length} />
             <div className="session-grid">
               <label>
-                <span>Número de nota *</span>
-                <input name="numero_nota" maxLength={30} required />
+                <span>Número de nota (opcional)</span>
+                <input name="numero_nota" maxLength={30} placeholder="Automático al guardar" />
                 <Error state={state} name="numero_nota" />
               </label>
               <label>
@@ -121,17 +118,6 @@ export function NewSaleDialog({ options }: { options: SalesOptions }) {
                     <option value={p.id_paciente} key={p.id_paciente}>
                       {p.ap_paterno} {p.ap_materno} {p.nombre}
                       {p.ci ? ` · CI ${p.ci}` : ""}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <span>Adquisición vinculada</span>
-                <select name="id_adquisicion" defaultValue="">
-                  <option value="">Sin adquisición</option>
-                  {options.acquisitions.map((a) => (
-                    <option value={a.id_adquisicion} key={a.id_adquisicion}>
-                      {a.concepto} · Bs {Number(a.total).toFixed(2)}
                     </option>
                   ))}
                 </select>
@@ -160,7 +146,7 @@ export function NewSaleDialog({ options }: { options: SalesOptions }) {
               <button
                 type="button"
                 onClick={() =>
-                  setRows((current) => [...current, current.length])
+                  setRows((current) => [...current, Math.max(...current) + 1])
                 }
               >
                 <PlusIcon />
@@ -168,13 +154,9 @@ export function NewSaleDialog({ options }: { options: SalesOptions }) {
               </button>
             </div>
             <div className="sale-details">
-              {rows.map((_, index) => {
-                const selectedItem = options.items.find(
-                  (item) => `${item.tipo}:${item.id}` === selectedItems[index],
-                );
-                const fixedPrice = selectedItem?.precio !== undefined;
+              {rows.map((rowId, index) => {
                 return (
-                <div className="sale-detail" key={index}>
+                <div className="sale-detail" key={rowId}>
                   <label>
                     <span>Concepto *</span>
                     <select
@@ -203,26 +185,26 @@ export function NewSaleDialog({ options }: { options: SalesOptions }) {
                           value={`${item.tipo}:${item.id}`}
                           key={`${item.tipo}-${item.id}`}
                         >
-                          {item.nombre} · {item.tipo.toLowerCase()}
+                           {item.nombre} · {item.presentacion ?? "presentación"}
                         </option>
                       ))}
                     </select>
                     <Error state={state} name={`item_${index}`} />
                   </label>
                   <label>
-                    <span>Cantidad *</span>
+                    <span>Presentaciones *</span>
                     <input
                       name={`cantidad_${index}`}
                       type="number"
-                      min="0.01"
-                      step="0.01"
+                       min="1"
+                       step="1"
                       defaultValue="1"
                       required
                     />
                     <Error state={state} name={`cantidad_${index}`} />
                   </label>
                   <label>
-                    <span>Precio unitario *</span>
+                    <span>Precio por presentación *</span>
                     <input
                       name={`precio_${index}`}
                       type="number"
@@ -235,7 +217,7 @@ export function NewSaleDialog({ options }: { options: SalesOptions }) {
                           [index]: event.target.value,
                         }))
                       }
-                      readOnly={fixedPrice}
+                      readOnly
                       required
                     />
                     <Error state={state} name={`precio_${index}`} />
@@ -254,11 +236,13 @@ export function NewSaleDialog({ options }: { options: SalesOptions }) {
                     <button
                       type="button"
                       aria-label="Quitar concepto"
-                      onClick={() =>
+                      onClick={() => {
+                        setSelectedItems(Object.fromEntries(rows.filter((__, i) => i !== index).map((__, i) => [i, selectedItems[i < index ? i : i + 1] ?? ""])));
+                        setPrices(Object.fromEntries(rows.filter((__, i) => i !== index).map((__, i) => [i, prices[i < index ? i : i + 1] ?? ""])));
                         setRows((current) =>
                           current.filter((__, i) => i !== index),
                         )
-                      }
+                      }}
                     >
                       <CloseIcon />
                     </button>
@@ -268,7 +252,7 @@ export function NewSaleDialog({ options }: { options: SalesOptions }) {
               })}
             </div>
             <footer>
-              <button type="button" onClick={() => setOpen(false)}>
+              <button type="button" onClick={close}>
                 Cancelar
               </button>
               <button className="directory-primary" disabled={pending}>
@@ -280,35 +264,30 @@ export function NewSaleDialog({ options }: { options: SalesOptions }) {
             <SubmissionResultDialog
               key={state.resultId}
               state={state}
-              onSuccess={() => setOpen(false)}
+              onSuccess={close}
             />
           )}
         </Dialog>
-      )}
     </>
   );
 }
 export function NewPaymentDialog({ options }: { options: SalesOptions }) {
   const [open, setOpen] = useState(false);
+  return <><button className="directory-primary" type="button" onClick={() => setOpen(true)}><PlusIcon />Registrar pago</button>{open && <PaymentForm options={options} close={() => setOpen(false)} />}</>;
+}
+function PaymentForm({ options, close }: { options: SalesOptions; close: () => void }) {
+  const [operationKey] = useState(() => crypto.randomUUID());
   const [state, action, pending] = useActionState(createPayment, initial);
   const [date] = useState(now);
   return (
     <>
-      <button
-        className="directory-primary"
-        type="button"
-        onClick={() => setOpen(true)}
-      >
-        <PlusIcon />
-        Registrar pago
-      </button>
-      {open && (
         <Dialog
-          close={() => setOpen(false)}
+          close={close}
           title="Registrar pago"
           description="Puedes registrar pagos parciales hasta completar el saldo."
         >
           <form action={action} className="session-form">
+            <input type="hidden" name="clave_operacion" value={operationKey} />
             <div className="session-grid">
               <label className="session-wide">
                 <span>Nota de venta *</span>
@@ -362,7 +341,7 @@ export function NewPaymentDialog({ options }: { options: SalesOptions }) {
               </label>
             </div>
             <footer>
-              <button type="button" onClick={() => setOpen(false)}>
+              <button type="button" onClick={close}>
                 Cancelar
               </button>
               <button className="directory-primary" disabled={pending}>
@@ -374,11 +353,10 @@ export function NewPaymentDialog({ options }: { options: SalesOptions }) {
             <SubmissionResultDialog
               key={state.resultId}
               state={state}
-              onSuccess={() => setOpen(false)}
+              onSuccess={close}
             />
           )}
         </Dialog>
-      )}
     </>
   );
 }
@@ -394,6 +372,7 @@ function CancelAction({
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
   const [result, setResult] = useState<RegistrationState>({});
+  const [reason, setReason] = useState("");
   return (
     <>
       <button
@@ -414,6 +393,8 @@ function CancelAction({
             <p>
               ¿Confirmas la anulación de <strong>{name}</strong>?
             </p>
+            <label>Motivo de anulación *<textarea value={reason} onChange={e => setReason(e.target.value)} minLength={5} maxLength={255} required /></label>
+            <p>No devuelve dinero ni repone productos. Si ya hubo entrega o atención, se requiere una devolución controlada.</p>
             <footer>
               <button type="button" onClick={() => setOpen(false)}>
                 Volver
@@ -421,13 +402,13 @@ function CancelAction({
               <button
                 type="button"
                 className="danger"
-                disabled={pending}
+                disabled={pending || reason.trim().length < 5}
                 onClick={() =>
                   start(async () => {
                     const response =
                       type === "note"
-                        ? await cancelSaleNote(id)
-                        : await cancelPayment(id);
+                        ? await cancelSaleNote(id, reason)
+                        : await cancelPayment(id, reason);
                     setOpen(false);
                     setResult(response);
                   })
@@ -452,6 +433,7 @@ function CancelAction({
 export const SaleNoteAction = ({ item }: { item: SaleNote }) =>
   item.estado === "EMITIDA" ? (
     <div className="session-actions">
+      {Number(item.productos_pendientes) > 0 && Number(item.saldo) === 0 && <DeliveryAction item={item} />}
       <CancelAction
         id={item.id_nota_venta}
         type="note"
@@ -459,6 +441,12 @@ export const SaleNoteAction = ({ item }: { item: SaleNote }) =>
       />
     </div>
   ) : null;
+function DeliveryAction({ item }: { item: SaleNote }) {
+  const [open, setOpen] = useState(false);
+  const [pending, start] = useTransition();
+  const [result, setResult] = useState<RegistrationState>({});
+  return <><button type="button" title="Confirmar entrega de productos" onClick={() => setOpen(true)}>Entregar</button>{open && <Dialog close={() => setOpen(false)} title="Confirmar entrega" description="Confirma únicamente cuando entregues físicamente los productos."><div className="session-confirm"><p>{item.numero_nota}: se descontará la cantidad pendiente en unidad base, empezando por los lotes utilizables de vencimiento más próximo. Si falta stock, no se registrará ninguna salida nueva.</p><footer><button type="button" onClick={() => setOpen(false)}>Volver</button><button className="directory-primary" disabled={pending} onClick={() => start(async () => { setResult(await deliverSaleProducts(item.id_nota_venta)); setOpen(false); })}>{pending ? "Registrando..." : "Confirmar entrega"}</button></footer></div></Dialog>}{result.resultId && <SubmissionResultDialog key={result.resultId} state={result} onSuccess={() => setResult({})} />}</>;
+}
 export const PaymentAction = ({ item }: { item: SalePayment }) =>
   item.estado === "REGISTRADO" ? (
     <div className="session-actions">

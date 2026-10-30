@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getSessionToken } from "@/lib/auth";
 import { backendUrl, readApiMessage } from "@/lib/backend";
 import type { RegistrationState } from "@/lib/types";
+import { readServiceMeasurements, readServiceSupplies } from "@/lib/service-configuration";
 
 const text = (data: FormData, name: string) => {
   const value = data.get(name);
@@ -49,17 +50,27 @@ export async function saveService(serviceId: number | null, _state: Registration
   const name = text(data, "nombre");
   const duration = id(data, "duracion_minutos");
   const price = text(data, "precio").replace(",", ".");
+  const sessions = id(data, "sesiones_incluidas");
+  const measurements = readServiceMeasurements(data);
+  const supplies = readServiceSupplies(data);
   const fieldErrors: Record<string, string> = {};
   if (!categoryId) fieldErrors.id_categoria = "Selecciona una categoría.";
   if (!name) fieldErrors.nombre = "Ingresa el nombre del servicio.";
   if (!duration) fieldErrors.duracion_minutos = "Ingresa una duración válida.";
-  if (!/^\d+(?:\.\d{1,2})?$/.test(price)) fieldErrors.precio = "Ingresa un precio válido.";
+  if (!/^\d{1,8}(?:\.\d{1,2})?$/.test(price)) fieldErrors.precio = "Ingresa un precio total válido.";
+  if (!sessions || sessions > 1000) fieldErrors.sesiones_incluidas = "Ingresa entre 1 y 1000 sesiones.";
+  if (!measurements.ok) fieldErrors.medidas = measurements.error;
+  if (!supplies.ok) fieldErrors.productos = supplies.error;
   if (Object.keys(fieldErrors).length) return { fieldErrors };
+  if (!measurements.ok || !supplies.ok) return { fieldErrors };
   const body = {
     id_categoria: categoryId,
     nombre: name,
     duracion_minutos: duration,
     precio: price,
+    sesiones_incluidas: sessions,
+    medidas: measurements.value,
+    productos: supplies.value,
     descripcion: text(data, "descripcion") || null,
     requiere_valoracion: data.get("requiere_valoracion") === "on",
     ...(serviceId ? { estado: text(data, "estado") } : {}),
@@ -104,19 +115,10 @@ export async function saveProductCategory(categoryId: number | null, _state: Reg
   return result ?? success(categoryId ? "Categoría actualizada" : "Categoría creada", "La clasificación de productos quedó actualizada.");
 }
 
-export async function syncServiceMeasures(serviceId: number, currentIds: number[], _state: RegistrationState, data: FormData): Promise<RegistrationState> {
-  const desired = new Set(data.getAll("medidas").map(Number).filter((value) => Number.isInteger(value) && value > 0));
-  const current = new Set(currentIds);
-  for (const measureId of current) {
-    if (!desired.has(measureId)) {
-      const result = await mutate(`/catalogo/servicios/${serviceId}/medidas/${measureId}`, "DELETE");
-      if (result) return result;
-    }
-  }
-  for (const measureId of desired) {
-    const mandatory = data.get(`obligatoria_${measureId}`) === "on";
-    const result = await mutate(`/catalogo/servicios/${serviceId}/medidas`, "POST", { id_tipo_medida: measureId, obligatorio: mandatory });
-    if (result) return result;
-  }
+export async function syncServiceMeasures(serviceId: number, _state: RegistrationState, data: FormData): Promise<RegistrationState> {
+  const measurements = readServiceMeasurements(data);
+  if (!measurements.ok) return { fieldErrors: { medidas: measurements.error } };
+  const result = await mutate(`/catalogo/servicios/${serviceId}`, "PATCH", { medidas: measurements.value });
+  if (result) return result;
   return success("Mediciones actualizadas", "Las mediciones del servicio se guardaron correctamente.");
 }

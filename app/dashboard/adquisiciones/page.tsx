@@ -20,6 +20,8 @@ import "../sesiones/sessions.css";
 import "../inventario/inventory.css";
 import "../promociones/promotions.css";
 import "../operaciones/operations.css";
+import "../ventas/sales.css";
+import "@/components/commerce-workflow.css";
 export const metadata: Metadata = { title: "Adquisiciones de pacientes" };
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 const statuses: AcquisitionStatus[] = ["ACTIVA", "COMPLETADA", "CANCELADA"];
@@ -72,9 +74,9 @@ export default async function Page({
     >
       <header className="directory-heading">
         <div>
-          <span className="page-eyebrow">PAQUETES Y PROMOCIONES</span>
+          <span className="page-eyebrow">SERVICIOS, PAQUETES Y PROMOCIONES</span>
           <h1>Adquisiciones de pacientes</h1>
-          <p>Asigna beneficios y consulta el uso de sus sesiones.</p>
+          <p>Contrata servicios con nota automática. Los abonos se registran en Ventas → Pagos; la finalización es automática al pagar y utilizar sus sesiones.</p>
         </div>
         {create && <AcquisitionDialog options={options.value} />}
       </header>

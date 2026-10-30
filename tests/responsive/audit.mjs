@@ -122,7 +122,8 @@ async function main() {
         })()`);
         check(metrics.scrollWidth <= metrics.clientWidth + 1, `${route} ${width}x${height}: desborde horizontal ${JSON.stringify(metrics)}`);
         check(!metrics.error, `${route}: no muestra los datos ficticios`);
-        check(metrics.pathname === route.split('?')[0], `${route}: redirección inesperada a ${metrics.pathname}`);
+        const expectedPath = route.split('?')[0] === '/dashboard/atencion' ? '/dashboard/tratamientos' : route.split('?')[0];
+        check(metrics.pathname === expectedPath, `${route}: redirección inesperada a ${metrics.pathname}`);
         check(metrics.overflow.length === 0, `${route} ${width}x${height}: contenido recortado ${metrics.overflow.join(', ')}`);
         if (metrics.structureControls) {
           const { workspaceWidth, tabs, create } = metrics.structureControls;
@@ -161,7 +162,7 @@ async function main() {
         const candidates = [...document.querySelectorAll('.app-main button, .account-menu__dropdown button')].filter(button => {
           const text = button.getAttribute('title') || button.getAttribute('aria-label') || button.textContent;
           return button.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true }) && !button.disabled && !(button.form && button.type === 'submit')
-            && (/nuev[oa]|crear|registrar|agregar|iniciar|ampliar|editar|configurar|permisos/i.test(text) || button.matches('.user-status-trigger') || button.closest('.account-menu__dropdown'))
+            && (/nuev[oa]|crear|registrar|agregar|asignar|iniciar|ampliar|editar|configurar|permisos|anular|entreg[ar]|cancelar/i.test(text) || button.matches('.user-status-trigger, .agenda-timeline-card') || button.closest('.account-menu__dropdown'))
             && !/guardar|eliminar|baja|reactivar/i.test(text);
         });
         const unique = new Set();
@@ -170,7 +171,7 @@ async function main() {
           if (unique.has(key)) return false;
           unique.add(key);
           return true;
-        }).slice(0, 8).map((button, i) => { button.dataset.responsiveTest = String(i); return { id: i, label: button.getAttribute('title') || button.textContent.trim() }; });
+        }).slice(0, 8).map((button, i) => { button.dataset.responsiveTest = String(i); return { id: i, label: button.getAttribute('title') || button.textContent.trim(), timeline: button.matches('.agenda-timeline-card') }; });
       })()`);
       for (const button of buttons) {
         await evaluate(`(() => {
@@ -196,6 +197,44 @@ async function main() {
             ? resolve() : setTimeout(wait, 100);
           wait();
         })`);
+        if (button.timeline) {
+          const canAttendFromDay = await evaluate(`Boolean(document.querySelector('dialog[open] a[href*="/dashboard/sesiones?"][href*="atender="]'))`);
+          check(canAttendFromDay, `${route}: el detalle de la cita en espera no permite Atender desde la vista diaria`);
+        }
+        if (/asignar servicio/i.test(button.label)) {
+          const configured = await evaluate(`(() => {
+            const dialog = document.querySelector('dialog[open]');
+            const service = dialog?.querySelector('select[name="id_servicio"]');
+            if (!service) return false;
+            const option = [...service.options].find(option => option.value);
+            if (!option) return false;
+            service.value = option.value;
+            service.dispatchEvent(new Event('change', { bubbles: true }));
+            return true;
+          })()`);
+          await evaluate('new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))');
+          const standardSessions = await evaluate(`(() => {
+            const input = document.querySelector('dialog[open] input[name="sesiones_iniciales"]');
+            return input?.readOnly && input.value === '10';
+          })()`);
+          check(configured && standardSessions, `${route}: asignar servicio no propone las 10 sesiones del catálogo ficticio`);
+        }
+        // Configuración del servicio: revisar también los campos desplegados al seleccionar insumos/mediciones.
+        await evaluate(`(() => {
+          const dialog = document.querySelector('dialog[open]');
+          for (const selector of ['select[name="offer"]', 'select[name="item_0"]']) {
+            const select = dialog?.querySelector(selector);
+            const option = select && [...select.options].find(item => item.value);
+            if (option) { select.value = option.value; select.dispatchEvent(new Event('change', { bubbles: true })); }
+          }
+        })()`);
+        await evaluate('new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))');
+        await evaluate(`(() => {
+          const dialog = document.querySelector('dialog[open]');
+          if (!dialog?.querySelector('input[name="sesiones_incluidas"]')) return;
+          dialog.querySelector('input[name="medidas"]:not(:checked)')?.click();
+          dialog.querySelector('input[name="productos"]:not(:checked)')?.click();
+        })()`);
         for (const [width, height] of [[1366, 600], [390, 640]]) {
           await resize(width, height);
           const metrics = await evaluate(`(() => {
@@ -221,6 +260,7 @@ async function main() {
           check(!metrics.contentOverflow, `${label}: contenido mas ancho que la ventana`);
           check(!metrics.dataError, `${label}: no se cargaron los datos ficticios del formulario`);
           results.push({ dialog: label, ...metrics });
+          if (width === 390) await screenshot(route.replaceAll(/[^a-z0-9]+/gi, '-') + '-dialog-' + button.id + '-mobile');
         }
         await resize(1366, 600);
         await screenshot(route.replaceAll(/[^a-z0-9]+/gi, '-') + '-dialog-' + button.id);

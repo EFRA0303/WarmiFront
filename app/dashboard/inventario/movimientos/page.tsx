@@ -12,6 +12,7 @@ import type { InventoryMovementType } from "@/lib/types";
 import "../../people.css";
 import "../../sesiones/sessions.css";
 import "../inventory.css";
+import "@/components/commerce-workflow.css";
 import "../../promociones/promotions.css";
 export const metadata: Metadata = { title: "Movimientos de inventario" };
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);

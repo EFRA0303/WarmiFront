@@ -3,6 +3,7 @@ import { DirectoryTableActions } from "@/components/directory-table-actions";
 import { DynamicSearchInput } from "@/components/dynamic-search-input";
 import { InventoryPagination } from "@/components/inventory-pagination";
 import { StockOperationDialog } from "@/components/remaining-dialogs";
+import "@/components/commerce-workflow.css";
 import type {
   InventoryOperationOptions,
   PaginatedResponse,
@@ -39,7 +40,7 @@ export function StockOperationList({
 }) {
   return (
     <section
-      className="directory-page inventory-page"
+      className="directory-page inventory-page inventory-ledger-page"
       data-directory-scope={type}
     >
       <header className="directory-heading">

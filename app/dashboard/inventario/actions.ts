@@ -177,7 +177,7 @@ export async function saveLot(
   const result = await mutate(
     id ? `/inventario/lotes/${id}` : "/inventario/lotes",
     id ? "PATCH" : "POST",
-    body,
+    id ? body : { ...body, clave_operacion: text(data, "clave_operacion") },
   );
   return (
     result ??
@@ -210,9 +210,11 @@ export async function createMovement(
   if (!numeric(cantidad) || Number(cantidad) <= 0)
     errors.cantidad = "Ingresa una cantidad mayor a cero.";
   if (!rawDate) errors.fecha_movimiento = "Selecciona la fecha y hora.";
+  if (text(data, "observaciones").length < 5) errors.observaciones = "Indica un motivo de al menos cinco caracteres.";
   if (Object.keys(errors).length) return { fieldErrors: errors };
   const fecha = new Date(`${rawDate}:00-04:00`).toISOString();
   const result = await mutate("/inventario/movimientos", "POST", {
+    clave_operacion: text(data, "clave_operacion"),
     id_lote: lot,
     tipo,
     cantidad,

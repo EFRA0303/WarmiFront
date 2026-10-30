@@ -9,7 +9,6 @@ import {
 } from "react";
 import {
   BoxIcon,
-  CheckIcon,
   CloseIcon,
   PlusIcon,
 } from "@/components/icons";
@@ -62,7 +61,7 @@ function Dialog({
             <h2>{title}</h2>
             <p>{description}</p>
           </div>
-          <button type="button" onClick={close}>
+          <button type="button" onClick={close} aria-label="Cerrar">
             <CloseIcon />
           </button>
         </header>
@@ -81,29 +80,25 @@ export function AcquisitionDialog({
 }: {
   options: AcquisitionOptions;
 }) {
-  const [open, setOpen] = useState(false),
-    [selected, setSelected] = useState("");
+  const [open, setOpen] = useState(false);
+  return <><button className="directory-primary" type="button" onClick={() => setOpen(true)}><PlusIcon />Nueva adquisición</button>{open && <AcquisitionForm options={options} close={() => setOpen(false)} />}</>;
+}
+function AcquisitionForm({ options, close }: { options: AcquisitionOptions; close: () => void }) {
+  const [selected, setSelected] = useState("");
+  const [operationKey] = useState(() => crypto.randomUUID());
   const [state, action, pending] = useActionState(createAcquisition, initial);
   const [date] = useState(now);
   const offer = options.offers.find((o) => `${o.tipo}:${o.id}` === selected);
   return (
     <>
-      <button
-        className="directory-primary"
-        type="button"
-        onClick={() => setOpen(true)}
-      >
-        <PlusIcon />
-        Nueva adquisición
-      </button>
-      {open && (
         <Dialog
-          close={() => setOpen(false)}
-          title="Asignar paquete o promoción"
-          description="Las sesiones quedarán vinculadas al paciente."
+          close={close}
+          title="Adquirir servicio, paquete o promoción"
+          description="Genera automáticamente la nota y el saldo. El primer abono se registra por separado para habilitar la atención."
           wide
         >
           <form action={action} className="session-form">
+            <input type="hidden" name="clave_operacion" value={operationKey} />
             <input
               type="hidden"
               name="service_count"
@@ -126,7 +121,7 @@ export function AcquisitionDialog({
                 <Error state={state} name="id_paciente" />
               </label>
               <label>
-                <span>Paquete o promoción *</span>
+                <span>Servicio, paquete o promoción *</span>
                 <select
                   name="offer"
                   value={selected}
@@ -142,7 +137,7 @@ export function AcquisitionDialog({
                       value={`${o.tipo}:${o.id}`}
                     >
                       {o.nombre} ·{" "}
-                      {o.tipo === "PAQUETE"
+                       {o.tipo !== "PROMOCION"
                         ? `Bs ${Number(o.precio).toFixed(2)}`
                         : "Promoción"}
                     </option>
@@ -183,7 +178,7 @@ export function AcquisitionDialog({
                       <small>{s.sesiones_incluidas} sesiones</small>
                     </div>
                     <label>
-                      <span>Precio por sesión *</span>
+                       <span>Precio referencial por sesión</span>
                       <input
                         name={`price_${i}`}
                         type="number"
@@ -200,7 +195,7 @@ export function AcquisitionDialog({
               </div>
             )}
             <footer>
-              <button type="button" onClick={() => setOpen(false)}>
+              <button type="button" onClick={close}>
                 Cancelar
               </button>
               <button
@@ -215,29 +210,22 @@ export function AcquisitionDialog({
             <SubmissionResultDialog
               key={state.resultId}
               state={state}
-              onSuccess={() => setOpen(false)}
+              onSuccess={close}
             />
           )}
         </Dialog>
-      )}
     </>
   );
 }
 export function AcquisitionActions({ item }: { item: Acquisition }) {
-  const [choice, setChoice] = useState<"COMPLETADA" | "CANCELADA" | null>(null),
+  const [choice, setChoice] = useState<"CANCELADA" | null>(null),
     [pending, start] = useTransition(),
     [result, setResult] = useState<RegistrationState>({});
+  const [reason, setReason] = useState("");
   if (item.estado !== "ACTIVA") return null;
   return (
     <>
       <div className="session-actions">
-        <button
-          className="finish"
-          title="Completar"
-          onClick={() => setChoice("COMPLETADA")}
-        >
-          <CheckIcon />
-        </button>
         <button
           className="cancel"
           title="Cancelar"
@@ -249,27 +237,26 @@ export function AcquisitionActions({ item }: { item: Acquisition }) {
       {choice && (
         <Dialog
           close={() => setChoice(null)}
-          title={
-            choice === "COMPLETADA"
-              ? "Completar adquisición"
-              : "Cancelar adquisición"
-          }
+          title="Cancelar adquisición"
           description="El registro permanecerá en el historial."
         >
           <div className="session-confirm">
             <p>
               ¿Confirmas el cambio de <strong>{item.origen}</strong>?
             </p>
+            <label>Motivo *<textarea value={reason} onChange={e => setReason(e.target.value)} minLength={5} maxLength={255} required /></label>
+            <p>También se anulará la nota vinculada. No se permite si hay pagos o atención que requieran devolución.</p>
             <footer>
               <button onClick={() => setChoice(null)}>Volver</button>
               <button
                 className={choice === "CANCELADA" ? "danger" : "finish"}
-                disabled={pending}
+                disabled={pending || reason.trim().length < 5}
                 onClick={() =>
                   start(async () => {
                     const r = await changeAcquisition(
                       item.id_adquisicion,
                       choice,
+                      reason,
                     );
                     setChoice(null);
                     setResult(r);
@@ -299,22 +286,22 @@ export function StockOperationDialog({
   options: InventoryOperationOptions;
 }) {
   const [open, setOpen] = useState(false);
+  return <><button className="directory-primary" onClick={() => setOpen(true)}><PlusIcon />{type === "consumption" ? "Registrar consumo" : "Registrar salida"}</button>{open && <StockOperationForm type={type} options={options} close={() => setOpen(false)} />}</>;
+}
+function StockOperationForm({ type, options, close }: { type: "consumption" | "output"; options: InventoryOperationOptions; close: () => void }) {
+  const [referenceId, setReferenceId] = useState("");
+  const selectedDetail = options.saleDetails.find(item => item.id_detalle === Number(referenceId));
   const action = type === "consumption" ? createConsumption : createSaleOutput;
   const [state, formAction, pending] = useActionState(action, initial);
   const refs = type === "consumption" ? options.sessions : options.saleDetails;
   return (
     <>
-      <button className="directory-primary" onClick={() => setOpen(true)}>
-        <PlusIcon />
-        {type === "consumption" ? "Registrar consumo" : "Registrar salida"}
-      </button>
-      {open && (
         <Dialog
-          close={() => setOpen(false)}
+          close={close}
           title={
             type === "consumption" ? "Consumo por sesión" : "Salida por venta"
           }
-          description="El movimiento descontará existencias automáticamente."
+          description={type === "consumption" ? "Registra lo realmente utilizado en una sesión en curso, en unidad base." : "Salida parcial en unidad base de una nota pagada. Para entrega completa automática usa Ventas → Notas → Entregar."}
         >
           <form action={formAction} className="session-form">
             <div className="session-grid">
@@ -324,7 +311,8 @@ export function StockOperationDialog({
                 </span>
                 <select
                   name={type === "consumption" ? "id_sesion" : "id_detalle"}
-                  defaultValue=""
+                  value={referenceId}
+                  onChange={e => setReferenceId(e.target.value)}
                   required
                 >
                   <option value="" disabled>
@@ -362,12 +350,12 @@ export function StockOperationDialog({
               </label>
               <label className="session-wide">
                 <span>Lote *</span>
-                <select name="id_lote" defaultValue="" required>
+                <select name="id_lote" key={referenceId} defaultValue="" required disabled={!referenceId}>
                   <option value="" disabled>
                     Seleccionar lote
                   </option>
                   {options.lots
-                    .filter((l) => Number(l.stock_actual) > 0)
+                    .filter((l) => Number(l.stock_actual) > 0 && (type === "consumption" || l.id_producto === selectedDetail?.id_producto))
                     .map((l) => (
                       <option key={l.id_lote} value={l.id_lote}>
                         {l.producto} · {l.numero_lote || `#${l.id_lote}`} ·
@@ -378,7 +366,7 @@ export function StockOperationDialog({
                 <Error state={state} name="id_lote" />
               </label>
               <label>
-                <span>Cantidad *</span>
+                <span>Cantidad en unidad base *</span>
                 <input
                   name="cantidad"
                   type="number"
@@ -394,7 +382,7 @@ export function StockOperationDialog({
               </label>
             </div>
             <footer>
-              <button type="button" onClick={() => setOpen(false)}>
+              <button type="button" onClick={close}>
                 Cancelar
               </button>
               <button className="directory-primary" disabled={pending}>
@@ -405,11 +393,10 @@ export function StockOperationDialog({
           {state.resultId && (
             <SubmissionResultDialog
               state={state}
-              onSuccess={() => setOpen(false)}
+              onSuccess={close}
             />
           )}
         </Dialog>
-      )}
     </>
   );
 }

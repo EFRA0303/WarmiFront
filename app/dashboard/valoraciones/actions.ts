@@ -50,6 +50,7 @@ async function mutate(path: string, method: "POST" | "PATCH" | "PUT", body: obje
     return failure("No pudimos conectar con el servidor.");
   }
   revalidatePath("/dashboard/valoraciones");
+  revalidatePath("/dashboard/historiales", "layout");
   return null;
 }
 

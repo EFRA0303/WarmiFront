@@ -116,15 +116,17 @@ function ErrorText({
 function StartForm({
   options,
   close,
+  defaultAppointmentId,
 }: {
   options: SessionOptions;
   close: () => void;
+  defaultAppointmentId?: number;
 }) {
   const [state, action, pending] = useActionState(startSession, initial);
   const [mode, setMode] = useState<"appointment" | "manual">(
     options.appointments.length ? "appointment" : "manual",
   );
-  const [appointmentId, setAppointmentId] = useState("");
+  const [appointmentId, setAppointmentId] = useState(defaultAppointmentId ? String(defaultAppointmentId) : "");
   const appointment = options.appointments.find(
     (item) => item.id_cita === Number(appointmentId),
   );
@@ -153,7 +155,7 @@ function StartForm({
         </div>
         {mode === "manual" && !manualReady && (
           <p className="session-setup-alert">
-            Debe existir al menos un tratamiento con sesiones disponibles y un
+            Debe existir al menos un servicio del paciente con sesiones disponibles y un
             profesional clínico activo.
           </p>
         )}
@@ -206,9 +208,9 @@ function StartForm({
           ) : (
             <>
               <label>
-                <span>Tratamiento *</span>
+                <span>Servicio del paciente *</span>
                 <select name="id_tratamiento" defaultValue="" required>
-                  <option value="">Seleccionar tratamiento</option>
+                  <option value="">Seleccionar servicio del paciente</option>
                   {options.treatments
                     .filter((item) => item.sesiones_disponibles > 0)
                     .map((item) => (
@@ -277,8 +279,8 @@ function StartForm({
   );
 }
 
-export function NewSessionDialog({ options }: { options: SessionOptions }) {
-  const [open, setOpen] = useState(false);
+export function NewSessionDialog({ options, defaultAppointmentId }: { options: SessionOptions; defaultAppointmentId?: number }) {
+  const [open, setOpen] = useState(Boolean(defaultAppointmentId));
   const close = () => setOpen(false);
   return (
     <>
@@ -298,7 +300,7 @@ export function NewSessionDialog({ options }: { options: SessionOptions }) {
           title="Iniciar sesión clínica"
           description="Usa una cita en espera o registra una atención sin cita."
         >
-          <StartForm options={options} close={close} />
+          <StartForm options={options} close={close} defaultAppointmentId={defaultAppointmentId} />
         </Dialog>
       )}
     </>

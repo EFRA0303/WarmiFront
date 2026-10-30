@@ -7,13 +7,15 @@ import { DynamicSearchInput } from "@/components/dynamic-search-input";
 import { DirectoryTableActions } from "@/components/directory-table-actions";
 import { NewTreatmentDialog, TreatmentActions } from "@/components/treatment-dialogs";
 import { TreatmentStatusFilter } from "@/components/treatment-controls";
+import { PatientCareNavigation, PatientCareContext, PatientCareContextInputs, PatientCareRecordLinks } from "@/components/patient-care-navigation";
+import { careContext, careHref, type CareContext } from "@/lib/patient-care";
 import { getCurrentUser } from "@/lib/auth";
 import { getTreatmentOptions, getTreatments } from "@/lib/treatments";
 import type { TreatmentStatus } from "@/lib/types";
 import "../people.css";
 import "./treatments.css";
 
-export const metadata: Metadata = { title: "Tratamientos" };
+export const metadata: Metadata = { title: "Servicios del paciente" };
 const PAGE_SIZE = 10;
 const statuses = new Set<TreatmentStatus>(["PENDIENTE", "EN_CURSO", "FINALIZADO", "CANCELADO"]);
 const columns = [
@@ -34,12 +36,12 @@ function date(value: string | null) {
   return new Intl.DateTimeFormat("es-BO", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(`${value.slice(0, 10)}T12:00:00Z`));
 }
 
-function url(page: number, search: string, estado?: TreatmentStatus) {
+function url(page: number, search: string, estado?: TreatmentStatus, context: CareContext = {}) {
   const params = new URLSearchParams();
   if (search) params.set("search", search);
   if (estado) params.set("estado", estado);
   if (page > 1) params.set("page", String(page));
-  return params.size ? `/dashboard/tratamientos?${params}` : "/dashboard/tratamientos";
+  return careHref("/dashboard/tratamientos", context, Object.fromEntries(params));
 }
 
 function statusLabel(status: TreatmentStatus) {
@@ -49,18 +51,19 @@ function statusLabel(status: TreatmentStatus) {
 
 export default async function TreatmentsPage({ searchParams }: PageProps) {
   const params = await searchParams;
+  const context = { id_paciente: careContext(params).id_paciente };
   const rawPage = Number(one(params.page));
   const page = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
   const search = (one(params.search) || "").trim().slice(0, 150);
   const rawStatus = one(params.estado)?.toUpperCase() as TreatmentStatus | undefined;
   const estado = rawStatus && statuses.has(rawStatus) ? rawStatus : undefined;
   const [result, optionsResult, currentUser] = await Promise.all([
-    getTreatments({ page, limit: PAGE_SIZE, search, estado }),
+    getTreatments({ page, limit: PAGE_SIZE, search, estado, ...context }),
     getTreatmentOptions(),
     getCurrentUser(),
   ]);
   if ((!result.ok && result.status === 401) || (!optionsResult.ok && optionsResult.status === 401)) redirect("/login");
-  if (!currentUser?.permisos.includes("tratamientos.leer")) return <DirectoryError message="Tu cuenta no tiene permiso para consultar tratamientos." />;
+  if (!currentUser?.permisos.includes("tratamientos.leer")) return <DirectoryError message="Tu cuenta no tiene permiso para consultar servicios del paciente." />;
   if (!result.ok) return <DirectoryError message={result.message} />;
   if (!optionsResult.ok) return <DirectoryError message={optionsResult.message} />;
 
@@ -76,14 +79,18 @@ export default async function TreatmentsPage({ searchParams }: PageProps) {
   return (
     <section className="directory-page treatments-page" data-directory-scope="treatments">
       <header className="directory-heading">
-        <div><span className="page-eyebrow">GESTIÓN CLÍNICA</span><h1>Tratamientos</h1><p>Controla los servicios indicados, sus sesiones y el progreso de cada paciente.</p></div>
-        {canCreate && <NewTreatmentDialog options={optionsResult.value} />}
+        <div><span className="page-eyebrow">ATENCIÓN</span><h1>Servicios del paciente</h1><p>Asigna un servicio, reserva sus citas y consulta las sesiones, valoraciones y evolución del paciente.</p></div>
+        {canCreate && <NewTreatmentDialog key={context.id_paciente ?? "all"} options={optionsResult.value} defaultPatientId={optionsResult.value.patients.some(item => item.id_paciente === context.id_paciente) ? context.id_paciente : undefined} />}
       </header>
+
+      <PatientCareNavigation active="services" permissions={currentUser.permisos} context={context} />
+      <PatientCareContext context={context} clearPath="/dashboard/tratamientos" />
 
       <DirectoryTableActions scope="treatments" fileName="tratamientos" columns={columns} showActions={showActions} />
 
       <div className="directory-toolbar">
         <form action="/dashboard/tratamientos" method="get">
+          <PatientCareContextInputs context={context} />
           <label className="directory-search"><SearchIcon /><DynamicSearchInput id="treatment-search" initialValue={search} placeholder="Buscar paciente, CI, servicio o profesional..." basePath="/dashboard/tratamientos" /></label>
           <TreatmentStatusFilter initialValue={estado} />
         </form>
@@ -100,7 +107,7 @@ export default async function TreatmentsPage({ searchParams }: PageProps) {
                   const percent = Math.min(100, Math.round((treatment.sesiones_realizadas / totalSessions) * 100));
                   return <tr key={treatment.id_tratamiento}>
                     <td data-directory-column="patient"><div className="treatment-patient"><strong>{treatment.paciente}</strong><small>{treatment.ci ? `CI ${treatment.ci}` : `Paciente #${treatment.id_paciente}`}</small></div></td>
-                    <td data-directory-column="service"><div className="directory-stacked"><strong>{treatment.servicio}</strong><small>{treatment.duracion_minutos} min{treatment.requiere_valoracion ? " · Requiere valoración" : ""}</small></div></td>
+                    <td data-directory-column="service"><div className="directory-stacked"><strong>{treatment.servicio}</strong><small>{treatment.duracion_minutos} min{treatment.requiere_valoracion ? " · Requiere valoración" : ""}</small></div><PatientCareRecordLinks permissions={currentUser.permisos} patientId={treatment.id_paciente} treatmentId={treatment.id_tratamiento} historyId={treatment.id_historial} /></td>
                     <td data-directory-column="professional"><span className="treatment-professional" style={{ "--professional-color": treatment.color_agenda } as CSSProperties}><i />{treatment.profesional}</span></td>
                     <td data-directory-column="progress"><div className="treatment-progress"><div><strong>{treatment.sesiones_realizadas}/{totalSessions}</strong><small>{Math.max(0, totalSessions - treatment.sesiones_realizadas)} pendientes</small></div><span><i style={{ width: `${percent}%` }} /></span>{treatment.citas_pendientes > 0 && <small>{treatment.citas_pendientes} reservadas</small>}</div></td>
                     <td data-directory-column="start"><span className="directory-main-value">{date(treatment.fecha_inicio)}</span></td>
@@ -118,16 +125,17 @@ export default async function TreatmentsPage({ searchParams }: PageProps) {
               <div className="directory-card-head"><div className="treatment-patient"><strong>{treatment.paciente}</strong><small>{treatment.ci ? `CI ${treatment.ci}` : `Paciente #${treatment.id_paciente}`}</small></div><span className={`treatment-status treatment-status--${treatment.estado.toLowerCase()}`}><i />{statusLabel(treatment.estado)}</span></div>
               <dl><div><dt>Servicio</dt><dd>{treatment.servicio}</dd></div><div><dt>Inicio</dt><dd>{date(treatment.fecha_inicio)}</dd></div><div><dt>Indicado por</dt><dd><span className="treatment-professional" style={{ "--professional-color": treatment.color_agenda } as CSSProperties}><i />{treatment.profesional}</span></dd></div><div><dt>Duración</dt><dd>{treatment.duracion_minutos} minutos</dd></div></dl>
               <div className="treatment-progress treatment-mobile-progress"><div><strong>{treatment.sesiones_realizadas}/{totalSessions} sesiones</strong><small>{Math.max(0, totalSessions - treatment.sesiones_realizadas)} pendientes</small></div><span><i style={{ width: `${percent}%` }} /></span></div>
+              <PatientCareRecordLinks permissions={currentUser.permisos} patientId={treatment.id_paciente} treatmentId={treatment.id_tratamiento} historyId={treatment.id_historial} />
               {showActions && <div className="directory-card-actions"><TreatmentActions treatment={treatment} options={optionsResult.value} canEdit={canEdit} canCancel={canCancel} canReserve={canReserve} /></div>}
             </article>;
           })}</div>
-          <footer className="directory-footer"><p>Mostrando <strong>{total ? (current - 1) * limit + 1 : 0}–{Math.min(current * limit, total)}</strong> de <strong>{total}</strong></p>{pages > 1 && <nav><Link aria-disabled={current === 1} className={current === 1 ? "disabled" : ""} href={url(current - 1, search, estado)}><ChevronLeftIcon /></Link><span>Página {current} de {pages}</span><Link aria-disabled={current === pages} className={current === pages ? "disabled" : ""} href={url(current + 1, search, estado)}><ChevronRightIcon /></Link></nav>}</footer>
+          <footer className="directory-footer"><p>Mostrando <strong>{total ? (current - 1) * limit + 1 : 0}–{Math.min(current * limit, total)}</strong> de <strong>{total}</strong></p>{pages > 1 && <nav><Link aria-disabled={current === 1} className={current === 1 ? "disabled" : ""} href={url(current - 1, search, estado, context)}><ChevronLeftIcon /></Link><span>Página {current} de {pages}</span><Link aria-disabled={current === pages} className={current === pages ? "disabled" : ""} href={url(current + 1, search, estado, context)}><ChevronRightIcon /></Link></nav>}</footer>
         </>
-      ) : <div className="directory-message"><b>i</b><div><h2>No encontramos tratamientos</h2><p>{search || estado ? "Prueba con otros filtros." : "Todavía no existen tratamientos registrados."}</p></div>{(search || estado) && <Link className="directory-clear" href="/dashboard/tratamientos">Ver todos</Link>}</div>}
+      ) : <div className="directory-message"><b>i</b><div><h2>No encontramos servicios asignados</h2><p>{search || estado ? "Prueba con otros filtros." : "Asigna un servicio al paciente para comenzar a organizar su atención."}</p></div>{(search || estado) && <Link className="directory-clear" href={careHref("/dashboard/tratamientos", context)}>Limpiar búsqueda</Link>}</div>}
     </section>
   );
 }
 
 function DirectoryError({ message }: { message: string }) {
-  return <section className="directory-page"><div className="directory-message"><b>!</b><div><h2>No pudimos cargar tratamientos</h2><p>{message}</p></div></div></section>;
+  return <section className="directory-page"><div className="directory-message"><b>!</b><div><h2>No pudimos cargar los servicios del paciente</h2><p>{message}</p></div></div></section>;
 }

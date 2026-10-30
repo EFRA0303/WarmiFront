@@ -1,0 +1,10 @@
+.patient-care-nav { display: flex; min-width: 0; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 16px; }
+.patient-care-nav a { display: inline-flex; min-height: 40px; align-items: center; padding: 8px 13px; border: 1px solid var(--border); border-radius: 11px; background: var(--surface); color: var(--muted); text-decoration: none; font-size: .75rem; font-weight: 750; }
+.patient-care-nav a[aria-current="page"] { border-color: var(--primary); background: var(--primary-soft); color: var(--primary-strong); }
+.patient-care-nav a:focus-visible, .patient-care-record-links a:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+.patient-care-context { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; margin-bottom: 14px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; color: var(--muted); background: var(--surface-soft); font-size: .75rem; }
+.patient-care-context a, .patient-care-record-links a { color: var(--primary-strong); font-weight: 700; }
+.patient-care-record-links { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-top: 8px; font-size: .7rem; }
+.patient-care-notice { margin: 0 0 16px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; color: var(--muted); background: var(--surface-soft); font-size: .75rem; line-height: 1.6; }
+.patient-care-appointment-link { display: inline-flex; min-height: 36px; align-items: center; justify-content: center; gap: 6px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 9px; background: var(--primary-soft); color: var(--primary-strong); text-decoration: none; font-size: .7rem; font-weight: 800; }
+@media (max-width: 560px) { .patient-care-nav a { flex: 1 1 150px; justify-content: center; text-align: center; } }

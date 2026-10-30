@@ -36,6 +36,7 @@ type NavIcon = ComponentType<SVGProps<SVGSVGElement>>;
 type NavItem = {
   label: string;
   href?: string;
+  activePaths?: string[];
   icon?: NavIcon;
   permission?: string;
   permissions?: string[];
@@ -82,9 +83,10 @@ const navigation: NavItem[] = [
   },
   {
     label: "Atención", icon: TreatmentIcon,
-    anyPermissions: ["catalogo.leer", "clinica.leer", "comercial.leer", "adquisiciones.leer"],
+    anyPermissions: ["catalogo.leer", "clinica.leer", "tratamientos.leer", "comercial.leer", "adquisiciones.leer"],
     children: [
       { label: "Solicitudes de servicio", href: "/dashboard/solicitudes", permission: "clinica.leer" },
+      { label: "Servicios del paciente", href: "/dashboard/atencion", activePaths: ["/dashboard/tratamientos", "/dashboard/sesiones", "/dashboard/valoraciones"], anyPermissions: ["tratamientos.leer", "clinica.leer"] },
       { label: "Paquetes", href: "/dashboard/paquetes", permission: "comercial.leer", adminOnly: true },
       { label: "Promociones", href: "/dashboard/promociones", permission: "comercial.leer", adminOnly: true },
       { label: "Adquisiciones de pacientes", href: "/dashboard/adquisiciones", permission: "adquisiciones.leer" },
@@ -95,25 +97,6 @@ const navigation: NavItem[] = [
           { label: "Servicios", href: "/dashboard/servicios?tab=services" },
         ],
       },
-    ],
-  },
-  {
-    label: "Atención clínica", icon: TreatmentIcon,
-    anyPermissions: ["clinica.leer", "tratamientos.leer"],
-    children: [
-      { label: "Solicitudes de servicio", href: "/dashboard/solicitudes", permission: "clinica.leer" },
-      { label: "Tratamientos", href: "/dashboard/tratamientos", permission: "tratamientos.leer" },
-      { label: "Sesiones", href: "/dashboard/sesiones", permission: "clinica.leer" },
-      { label: "Valoraciones y medidas", href: "/dashboard/valoraciones", permission: "clinica.leer" },
-    ],
-  },
-  {
-    label: "Paquetes y promociones", icon: BoxIcon,
-    anyPermissions: ["comercial.leer", "adquisiciones.leer"],
-    children: [
-      { label: "Paquetes", href: "/dashboard/paquetes", permission: "comercial.leer", adminOnly: true },
-      { label: "Promociones", href: "/dashboard/promociones", permission: "comercial.leer", adminOnly: true },
-      { label: "Adquisiciones de pacientes", href: "/dashboard/adquisiciones", permission: "adquisiciones.leer" },
     ],
   },
   {
@@ -171,6 +154,7 @@ function itemVisible(item: NavItem, permissions: string[], configurationAdmin: b
 }
 
 function branchActive(item: NavItem, pathname: string, currentSearch: string): boolean {
+  if (item.activePaths?.some(path => pathname === path || pathname.startsWith(`${path}/`))) return true;
   if (item.href) {
     const [href, expectedSearch] = item.href.split("?");
     if (href === "/dashboard") return pathname === href;
@@ -217,7 +201,8 @@ const pageTitles: Record<string, string> = {
   "/dashboard/personal/nuevo": "Nuevo empleado",
   "/dashboard/personal/disponibilidad": "Disponibilidad del personal",
   "/dashboard/agenda": "Agenda",
-  "/dashboard/tratamientos": "Tratamientos",
+  "/dashboard/atencion": "Servicios del paciente",
+  "/dashboard/tratamientos": "Servicios del paciente",
   "/dashboard/sesiones": "Sesiones clínicas",
   "/dashboard/solicitudes": "Solicitudes de servicio",
   "/dashboard/valoraciones": "Valoraciones y medidas",
@@ -261,7 +246,8 @@ export function DashboardShell({
       : pathname === "/dashboard/documentos"
         ? "Documentos"
         : null;
-  const attentionSection = pathname === "/dashboard/servicios" ? "Catálogo" : null;
+  const attentionSection = pathname === "/dashboard/servicios" ? "Catálogo"
+    : ["/dashboard/atencion", "/dashboard/tratamientos", "/dashboard/sesiones", "/dashboard/valoraciones"].includes(pathname) ? "Servicios del paciente" : null;
   const sectionLabel = attentionSection || configurationSection;
   const currentSearch = useSearchParams().toString();
   const [menuOpen, setMenuOpen] = useState(false);

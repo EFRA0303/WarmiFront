@@ -118,6 +118,7 @@ export default async function AgendaPage({ searchParams }: PageProps) {
         defaultTreatmentId={defaultTreatmentId}
         canCreate={canCreate}
         canEdit={currentUser.permisos.includes("agenda.actualizar")}
+        canAttend={currentUser.permisos.includes("clinica.leer") && currentUser.permisos.includes("clinica.crear")}
       />
     </section>
   );

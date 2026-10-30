@@ -1,0 +1,13 @@
+.session-confirm label { display: grid; gap: 8px; }
+.session-confirm textarea { width: 100%; min-height: 90px; resize: vertical; padding: 10px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); color: var(--foreground); }
+.sales-table td > small { display: block; margin-top: 6px; color: var(--muted); font-size: .65rem; }
+.sales-page .session-actions button { min-width: 32px; width: auto; padding-inline: 8px; }
+.sale-detail.acquisition-detail { grid-template-columns: minmax(0, 1fr) minmax(160px, .5fr); }
+@media (max-width: 800px) {
+  .inventory-ledger-page .inventory-table, [data-directory-scope="inventory-movements"] .inventory-table { display: block; }
+  .sales-page .sales-table { display: block; }
+  .sales-page .directory-table-scroll { overflow-x: auto; }
+  .sales-page .sale-detail { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .sales-page .sale-detail label:first-child { grid-column: 1 / -1; }
+  .sale-detail.acquisition-detail { grid-template-columns: minmax(0, 1fr); }
+}

@@ -42,6 +42,10 @@ async function mutate(path: string, method: "POST" | "PATCH", body: object) {
   }
   revalidatePath("/dashboard/ventas/notas");
   revalidatePath("/dashboard/ventas/pagos");
+  revalidatePath("/dashboard/adquisiciones");
+  revalidatePath("/dashboard/inventario", "layout");
+  revalidatePath("/dashboard/operaciones", "layout");
+  revalidatePath("/dashboard/tratamientos");
   return null;
 }
 const money = (v: string) => /^\d+(?:\.\d{1,2})?$/.test(v.replace(",", "."));
@@ -58,7 +62,6 @@ export async function createSaleNote(
   const discount = text(data, "descuento").replace(",", ".") || "0";
   const count = Number(text(data, "detail_count"));
   const errors: Record<string, string> = {};
-  if (!numero) errors.numero_nota = "Ingresa el número de nota.";
   if (!fecha) errors.fecha_emision = "Selecciona la fecha de emisión.";
   if (!money(discount)) errors.descuento = "Ingresa un descuento válido.";
   const detalles: Array<Record<string, string | number>> = [];
@@ -71,25 +74,19 @@ export async function createSaleNote(
     const detailDiscount =
       text(data, `descuento_${i}`).replace(",", ".") || "0";
     if (
-      !new Set(["SERVICIO", "PRODUCTO", "PAQUETE"]).has(type) ||
-      !Number.isInteger(id)
+      type !== "PRODUCTO" ||
+      !Number.isInteger(id) || id < 1
     ) {
       errors[`item_${i}`] = "Selecciona un concepto.";
       continue;
     }
-    if (!money(quantity) || Number(quantity) <= 0)
-      errors[`cantidad_${i}`] = "Cantidad inválida.";
+    if (!/^\d+$/.test(quantity) || Number(quantity) <= 0)
+      errors[`cantidad_${i}`] = "Ingresa presentaciones completas.";
     if (!money(price)) errors[`precio_${i}`] = "Precio inválido.";
     if (!money(detailDiscount))
       errors[`descuento_${i}`] = "Descuento inválido.";
-    const key =
-      type === "SERVICIO"
-        ? "id_servicio"
-        : type === "PRODUCTO"
-          ? "id_producto"
-          : "id_paquete";
     detalles.push({
-      [key]: id,
+      id_producto: id,
       cantidad: quantity,
       precio_unitario: price,
       descuento: detailDiscount,
@@ -98,12 +95,11 @@ export async function createSaleNote(
   if (!detalles.length) errors.detalles = "Agrega al menos un concepto.";
   if (Object.keys(errors).length) return { fieldErrors: errors };
   const patient = Number(text(data, "id_paciente"));
-  const acquisition = Number(text(data, "id_adquisicion"));
   const result = await mutate("/ventas/notas", "POST", {
-    numero_nota: numero,
+    clave_operacion: text(data, "clave_operacion"),
+    numero_nota: numero || undefined,
     fecha_emision: fecha,
     id_paciente: patient > 0 ? patient : undefined,
-    id_adquisicion: acquisition > 0 ? acquisition : undefined,
     descuento: discount,
     observaciones: text(data, "observaciones") || undefined,
     detalles,
@@ -112,9 +108,10 @@ export async function createSaleNote(
     result ?? ok("Nota emitida", "La venta y sus importes fueron registrados.")
   );
 }
-export async function cancelSaleNote(id: number): Promise<RegistrationState> {
+export async function cancelSaleNote(id: number, reason: string): Promise<RegistrationState> {
   const result = await mutate(`/ventas/notas/${id}`, "PATCH", {
     estado: "ANULADA",
+    motivo_anulacion: reason,
   });
   return (
     result ??
@@ -141,6 +138,7 @@ export async function createPayment(
     errors.metodo_pago = "Selecciona el método.";
   if (Object.keys(errors).length) return { fieldErrors: errors };
   const result = await mutate("/ventas/pagos", "POST", {
+    clave_operacion: text(data, "clave_operacion"),
     id_nota_venta: note,
     monto: amount,
     fecha_pago: date,
@@ -151,12 +149,17 @@ export async function createPayment(
     result ?? ok("Pago registrado", "El saldo de la nota fue actualizado.")
   );
 }
-export async function cancelPayment(id: number): Promise<RegistrationState> {
+export async function cancelPayment(id: number, reason: string): Promise<RegistrationState> {
   const result = await mutate(`/ventas/pagos/${id}`, "PATCH", {
     estado: "ANULADO",
+    motivo_anulacion: reason,
   });
   return (
     result ??
     ok("Pago anulado", "El importe vuelve a formar parte del saldo pendiente.")
   );
+}
+export async function deliverSaleProducts(id: number): Promise<RegistrationState> {
+  const result = await mutate(`/ventas/notas/${id}/entregar`, "POST", {});
+  return result ?? ok("Entrega registrada", "Se registraron las salidas y movimientos por lote, sin duplicar entregas anteriores.");
 }

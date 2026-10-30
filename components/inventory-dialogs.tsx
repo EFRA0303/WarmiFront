@@ -236,7 +236,7 @@ function ProductForm({
           </div>
           <Error state={state} name="es_insumo" />
           {isSellable && <label>
-            <span>Precio de venta (Bs) *</span>
+            <span>Precio por presentación (Bs) *</span>
             <input name="precio_venta" type="number" min="0" step="0.01" defaultValue={item?.precio_venta ?? ""} required />
             <Error state={state} name="precio_venta" />
           </label>}
@@ -311,6 +311,7 @@ function LotForm({
   options: InventoryOptions;
   close: () => void;
 }) {
+  const [operationKey] = useState(() => crypto.randomUUID());
   const [state, action, pending] = useActionState(
     saveLot.bind(null, item?.id_lote ?? null),
     initial,
@@ -318,6 +319,7 @@ function LotForm({
   return (
     <>
       <form action={action} className="session-form">
+        {!item && <input type="hidden" name="clave_operacion" value={operationKey} />}
         <div className="session-grid">
           {!item && (
             <label>
@@ -346,7 +348,7 @@ function LotForm({
           {!item && (
             <>
               <label>
-                <span>Cantidad inicial *</span>
+                <span>Cantidad inicial en unidad base *</span>
                 <input
                   name="cantidad_inicial"
                   type="number"
@@ -461,27 +463,23 @@ export function LotDialog({
 }
 export function MovementDialog({ options }: { options: InventoryOptions }) {
   const [open, setOpen] = useState(false);
+  return <><button type="button" className="directory-primary" onClick={() => setOpen(true)}><PlusIcon />Nuevo movimiento</button>{open && <MovementForm options={options} close={() => setOpen(false)} />}</>;
+}
+function MovementForm({ options, close }: { options: InventoryOptions; close: () => void }) {
+  const [operationKey] = useState(() => crypto.randomUUID());
   const [state, action, pending] = useActionState(createMovement, initial);
   const [now] = useState(() =>
     new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString().slice(0, 16),
   );
   return (
     <>
-      <button
-        type="button"
-        className="directory-primary"
-        onClick={() => setOpen(true)}
-      >
-        <PlusIcon />
-        Nuevo movimiento
-      </button>
-      {open && (
         <Dialog
-          close={() => setOpen(false)}
+          close={close}
           title="Registrar movimiento"
           description="Registra entradas o salidas manuales; el sistema impedirá stock negativo."
         >
           <form action={action} className="session-form">
+            <input type="hidden" name="clave_operacion" value={operationKey} />
             <div className="session-grid">
               <label className="session-wide">
                 <span>Lote *</span>
@@ -533,12 +531,13 @@ export function MovementDialog({ options }: { options: InventoryOptions }) {
                 <Error state={state} name="fecha_movimiento" />
               </label>
               <label className="session-wide">
-                <span>Observaciones</span>
-                <textarea name="observaciones" rows={3} maxLength={255} />
+                <span>Motivo o referencia *</span>
+                <textarea name="observaciones" rows={3} minLength={5} maxLength={255} required />
+                <Error state={state} name="observaciones" />
               </label>
             </div>
             <footer>
-              <button type="button" onClick={() => setOpen(false)}>
+              <button type="button" onClick={close}>
                 Cancelar
               </button>
               <button className="directory-primary" disabled={pending}>
@@ -550,11 +549,10 @@ export function MovementDialog({ options }: { options: InventoryOptions }) {
             <SubmissionResultDialog
               key={state.resultId}
               state={state}
-              onSuccess={() => setOpen(false)}
+              onSuccess={close}
             />
           )}
         </Dialog>
-      )}
     </>
   );
 }

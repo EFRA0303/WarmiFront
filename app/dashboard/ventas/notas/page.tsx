@@ -14,6 +14,7 @@ import "../../sesiones/sessions.css";
 import "../../inventario/inventory.css";
 import "../../promociones/promotions.css";
 import "../sales.css";
+import "@/components/commerce-workflow.css";
 export const metadata: Metadata = { title: "Notas de venta" };
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 const statuses: SaleNoteStatus[] = ["EMITIDA", "ANULADA"];
@@ -68,8 +69,7 @@ export default async function Page({
           <span className="page-eyebrow">VENTAS</span>
           <h1>Notas de venta</h1>
           <p>
-            Emite ventas de servicios, productos o paquetes y controla sus
-            saldos.
+            Consulta notas automáticas de adquisiciones, vende productos y controla pagos y entregas.
           </p>
         </div>
         {create && <NewSaleDialog options={options.value} />}
@@ -138,7 +138,7 @@ export default async function Page({
                         <div className="sale-balance">
                           <strong>{cash(item.saldo)}</strong>
                           <small>
-                            {Number(item.saldo) <= 0 ? "Pagada" : "Pendiente"}
+                             {item.estado === "ANULADA" ? "Anulada" : Number(item.saldo) <= 0 ? "Pagada" : "Pendiente"}
                           </small>
                         </div>
                       </td>
@@ -149,6 +149,7 @@ export default async function Page({
                           <span />
                           {labels[item.estado]}
                         </span>
+                        {item.estado === "EMITIDA" && <small>{Number(item.productos_pendientes) > 0 ? "Entrega pendiente" : Number(item.entregas_registradas) > 0 ? "Productos entregados" : "Sin entrega de productos"}</small>}
                       </td>
                       {edit && (
                         <td data-directory-column="actions">

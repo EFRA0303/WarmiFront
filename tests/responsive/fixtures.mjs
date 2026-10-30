@@ -12,7 +12,7 @@ const businessHours = { intervalo_minutos: 30, horarios_semanales: ['LUNES', 'MA
 const area = { id_area: 1, nombre: 'Área de prueba', descripcion: 'Descripción para revisar la distribución', estado: 'ACTIVO' };
 const category = { id_categoria: 1, id_area: 1, nombre: 'Categoría de prueba', descripcion: 'Descripción de prueba', estado: 'ACTIVO', area };
 const measure = { id_tipo_medida: 1, nombre: 'Medida de prueba', unidad: 'cm', estado: 'ACTIVO' };
-const service = { id_servicio: 1, id_categoria: 1, nombre: 'Servicio de prueba con nombre descriptivo', descripcion: 'Texto de prueba para comprobar el espacio disponible', duracion_minutos: 60, precio: '150.00', requiere_valoracion: true, estado: 'ACTIVO', categoria: category, medidas: [{ id_servicio: 1, id_tipo_medida: 1, obligatorio: true, tipoMedida: measure }] };
+const service = { id_servicio: 1, id_categoria: 1, nombre: 'Servicio de prueba con nombre descriptivo', descripcion: 'Texto de prueba para comprobar el espacio disponible', duracion_minutos: 60, precio: '1500.00', sesiones_incluidas: 10, requiere_valoracion: true, estado: 'ACTIVO', categoria: category, medidas: [{ id_servicio: 1, id_tipo_medida: 1, obligatorio: true, momentos: ['INICIAL', 'FINAL'], tipoMedida: measure }], productos: [] };
 const productCategory = { id_categoria_producto: 1, nombre: 'Categoría de productos de prueba', descripcion: 'Descripción ficticia', estado: 'ACTIVO' };
 const product = { id_producto: 1, id_categoria_producto: 1, categoria_producto: productCategory.nombre, nombre: 'Producto de prueba', marca: 'Marca de prueba', sku: 'PRUEBA-001', codigo_barras: null, descripcion: 'Descripción ficticia', unidad_medida: 'ml', presentacion: 'Frasco', contenido_presentacion: 100, precio_venta: 50, imagen_url: null, es_insumo: true, es_vendible: true, stock_minimo: 5, estado: 'ACTIVO', lotes: 1, stock_actual: 80 };
 const lot = { id_lote: 1, id_producto: 1, numero_lote: 'LOTE-PRUEBA', cantidad_inicial: 100, fecha_ingreso: now.slice(0, 10), fecha_vencimiento: '2027-12-31', costo_unitario: 20, estado: 'DISPONIBLE', producto: product.nombre, unidad_medida: 'ml', stock_actual: 80 };
@@ -26,7 +26,7 @@ const history = { ...person, id_historial: 1, id_paciente: 1, id_usuario: 1, cor
 const packageService = { id_servicio: 1, servicio: service.nombre, sesiones_incluidas: 10, duracion_minutos: 60, categoria: category.nombre, area: area.nombre };
 const commercialPackage = { id_paquete: 1, nombre: 'Paquete de prueba', descripcion: 'Descripción ficticia', precio: 1200, estado: 'ACTIVO', servicios: [packageService], adquisiciones: 1 };
 const acquisition = { ...clinical, id_adquisicion: 1, id_paquete: 1, id_promocion: null, fecha_adquisicion: now, precio_original: 1500, descuento: 300, total: 1200, estado: 'ACTIVA', origen: 'PAQUETE', sesiones_incluidas: 10, sesiones_asignadas: 10, sesiones_realizadas: 2, detalles: [{ ...packageService, id_detalle_adquisicion: 1, precio_unitario: 120, subtotal: 1200 }] };
-const note = { ...clinical, id_nota_venta: 1, id_adquisicion: 1, numero_nota: 'NV-PRUEBA-001', fecha_emision: now, subtotal: 1500, descuento: 300, total: 1200, estado: 'EMITIDA', emitido_por_nombre: 'Usuario De Prueba', detalles: 1, pagado: 600, saldo: 600 };
+const note = { ...clinical, id_nota_venta: 1, id_adquisicion: 1, numero_nota: 'NV-PRUEBA-001', fecha_emision: now, subtotal: 1500, descuento: 300, total: 1200, estado: 'EMITIDA', emitido_por_nombre: 'Usuario De Prueba', detalles: 1, pagado: 1200, saldo: 0, productos_pendientes: 1, entregas_registradas: 0 };
 const company = { id_empresa: 1, nombre_comercial: 'WARMI SPA', razon_social: 'Empresa ficticia de pruebas', nit: 'PRUEBA-001', actividad_economica: 'Bienestar', telefono1: person.telefono1, telefono2: null, correo: 'prueba@example.invalid', direccion: 'Dirección ficticia para pruebas visuales', sitio_web: 'https://example.invalid', logo_url: null, moneda: 'BOB', eslogan_principal: 'Cuida de ti, por dentro y por fuera.', titulo_login: 'Warmi SPA', descripcion_corta: 'Pruebas visuales sin datos reales', imagen_fondo_login_url: null, imagen_fondo_panel_login_url: null };
 const permissionItems = permissions.map((permiso, index) => ({ id_permiso: index + 1, permiso, descripcion: `Permiso de prueba: ${permiso}`, estado: 'ACTIVO' }));
 const options = { patients: [{ ...person, id_paciente: 1, id_historial: 1 }], staff: [staff], services: [{ ...service, categoria: category.nombre, area: area.nombre }], treatments: [treatment], appointments: [{ ...clinical, ...appointment, paciente: clinical.paciente }], requests: [request], sessions: [session], acquisitions: [], offers: [], items: [{ id: 1, nombre: service.nombre, tipo: 'SERVICIO', precio: 150 }], notes: [note], products: [product], lots: [lot], productCategories: [productCategory], saleDetails: [], measureTypes: [measure], serviceMeasures: [{ id_servicio: 1, id_tipo_medida: 1, obligatorio: true }], staffSchedules: [schedule], staffExtraHours: [], staffPermissions: [], businessHours };
@@ -40,7 +40,7 @@ const records = {
   '/clinica/solicitudes': request,
   '/clinica/tratamientos': treatment,
   '/clinica/sesiones': session,
-  '/clinica/valoraciones': valuation,
+  '/clinica/valoraciones': { ...valuation, id_solicitud: null, id_tratamiento: 1, origen: 'TRATAMIENTO' },
   '/agenda/citas': appointment,
   '/catalogo/areas': area,
   '/catalogo/categorias': category,
@@ -67,6 +67,10 @@ const records = {
   '/disponibilidad/horarios-extras': { ...schedule, id_horario_extra: 1, fecha: now.slice(0, 10), autorizado_por: 1, motivo: 'Prueba visual', estado: 'AUTORIZADO' },
   '/disponibilidad/permisos': { id_permiso: 1, id_personal: 1, fecha_hora_inicio: now, fecha_hora_fin: now, motivo: 'Prueba visual', estado: true },
 };
+options.items = [{ id: 1, nombre: product.nombre, tipo: 'PRODUCTO', precio: product.precio_venta, presentacion: product.presentacion, contenido_presentacion: product.contenido_presentacion, unidad_medida: product.unidad_medida }];
+options.offers = [{ id: 1, nombre: service.nombre, tipo: 'SERVICIO', precio: service.precio, servicios: [{ ...packageService, precio: 150 }] }, { id: 1, nombre: commercialPackage.nombre, tipo: 'PAQUETE', precio: 1200, servicios: [{ ...packageService, precio: 150 }] }];
+options.acquisitions = [{ id_adquisicion: 1, id_detalle_adquisicion: 1, id_paciente: 1, id_servicio: 1, nombre_servicio_snapshot: service.nombre, sesiones_disponibles: 10 }];
+options.saleDetails = [{ id_detalle: 1, id_producto: 1, producto: product.nombre, cantidad: 1, numero_nota: note.numero_nota, cantidad_salida: 20, pendiente: 80 }];
 
 function fixture(url) {
   const pathname = url.pathname;
@@ -75,6 +79,7 @@ function fixture(url) {
   if (pathname === '/empresa/horario-atencion') return businessHours;
   if (pathname === '/empresa/monedas/listar') return [{ code: 'BOB', name: 'Boliviano', countries: 'Bolivia' }];
   if (pathname === '/disponibilidad/opciones') return [staff];
+  if (pathname === '/catalogo/insumos-opciones') return Array.from({ length: 4 }, (_, index) => ({ ...product, id_producto: index + 1 }));
   if (pathname === '/historiales/pacientes-disponibles') return options.patients;
   if (pathname === '/historiales/opciones') return options.patients;
   if (pathname === '/historiales/1/resumen') return { history, requests: [request], treatments: [treatment], sessions: [session], valuations: [valuation], appointments: [{ ...appointment, servicio: service.nombre, profesional: clinical.profesional }] };
@@ -90,13 +95,15 @@ function fixture(url) {
   const single = ['/roles', '/empresa', '/configuracion-auditoria', '/empresa/configuraciones-documentos/listar'].includes(pathname);
   const data = Array.from({ length: single ? 1 : 8 }, (_, index) => {
     const copy = structuredClone(record);
+    if (pathname === '/agenda/citas' && index === 0) copy.estado = 'EN_ESPERA';
     for (const key of Object.keys(copy)) {
       if (/^id_/.test(key) && copy[key] === 1) copy[key] = index + 1;
       if (/^id_/.test(key) && copy[key] === '1') copy[key] = String(index + 1);
     }
     return copy;
   });
-  return { data, total: data.length, page: 1, limit: Number(url.searchParams.get('limit')) || 10 };
+  const filtered = pathname.startsWith('/clinica/') ? data.filter(row => ['id_paciente', 'id_tratamiento', 'id_sesion'].every(key => !url.searchParams.has(key) || Number(row[key]) === Number(url.searchParams.get(key)))) : data;
+  return { data: filtered, total: filtered.length, page: 1, limit: Number(url.searchParams.get('limit')) || 10 };
 }
 
 export { fixture };

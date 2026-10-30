@@ -40,6 +40,7 @@ async function mutate(path: string, method: "POST" | "PATCH", body?: object) {
   }
   revalidatePath("/dashboard/tratamientos");
   revalidatePath("/dashboard/agenda");
+  revalidatePath("/dashboard/historiales", "layout");
   return null;
 }
 
@@ -71,8 +72,8 @@ export async function createTreatment(
   return result ?? {
     resultId: randomUUID(),
     outcome: "success",
-    title: "Tratamiento creado",
-    message: "El tratamiento quedó disponible para reservar sus sesiones en Agenda.",
+    title: "Servicio asignado",
+    message: "El servicio quedó asignado al paciente. Ya puedes reservar sus sesiones desde Agenda.",
   };
 }
 

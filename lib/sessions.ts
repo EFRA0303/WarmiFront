@@ -43,6 +43,8 @@ export function getSessions(query: {
   limit: number;
   search?: string;
   estado?: SessionStatus;
+  id_paciente?: number;
+  id_tratamiento?: number;
 }) {
   const params = new URLSearchParams({
     page: String(query.page),
@@ -50,6 +52,8 @@ export function getSessions(query: {
   });
   if (query.search) params.set("search", query.search);
   if (query.estado) params.set("estado", query.estado);
+  if (query.id_paciente) params.set("id_paciente", String(query.id_paciente));
+  if (query.id_tratamiento) params.set("id_tratamiento", String(query.id_tratamiento));
   return request<PaginatedResponse<ClinicalSession>>(
     `/clinica/sesiones?${params}`,
   );

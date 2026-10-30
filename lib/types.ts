@@ -394,6 +394,8 @@ export type TreatmentOptions = {
     duracion_minutos: number;
     descripcion: string | null;
     requiere_valoracion: boolean;
+    sesiones_incluidas?: number;
+    precio?: string | number;
     categoria: string;
     area: string;
   }>;
@@ -443,8 +445,13 @@ export type ServiceMeasure = {
   id_servicio: number;
   id_tipo_medida: number;
   obligatorio: boolean;
+  momentos?: MeasurementMoment[];
   tipoMedida: MeasureType;
 };
+
+export type MeasurementMoment = "INICIAL" | "CADA_SESION" | "FINAL";
+export type CatalogSupply = { id_producto: number; nombre: string; unidad_medida: string; estado: GeneralStatus };
+export type ServiceSupply = { id_producto: number; cantidad_referencial: string | number | null; producto: CatalogSupply };
 
 export type CatalogService = {
   id_servicio: number;
@@ -452,11 +459,13 @@ export type CatalogService = {
   nombre: string;
   duracion_minutos: number;
   precio: string | number;
+  sesiones_incluidas?: number;
   descripcion: string | null;
   requiere_valoracion: boolean;
   estado: GeneralStatus;
   categoria?: ServiceCategory;
   medidas: ServiceMeasure[];
+  productos?: ServiceSupply[];
 };
 
 export type ServiceCatalogData = {
@@ -465,6 +474,7 @@ export type ServiceCatalogData = {
   services: CatalogService[];
   measures: MeasureType[];
   productCategories: ProductCategory[];
+  supplies?: CatalogSupply[];
 };
 
 export type ProductCategory = {
@@ -530,6 +540,7 @@ export type SessionStatus = "EN_CURSO" | "FINALIZADA" | "CANCELADA";
 
 export type ClinicalSession = {
   id_sesion: number;
+  id_historial?: number;
   id_tratamiento: number;
   id_cita: number | null;
   atendido_por: number;
@@ -874,17 +885,17 @@ export type InventoryOptions = {
 export type SaleNoteStatus = "EMITIDA" | "ANULADA";
 export type PaymentStatus = "REGISTRADO" | "ANULADO";
 export type PaymentMethod = "EFECTIVO" | "QR" | "TRANSFERENCIA" | "TARJETA" | "OTRO";
-export type SaleNote = { id_nota_venta: number; id_adquisicion: number | null; id_paciente: number | null; numero_nota: string; fecha_emision: string; subtotal: string | number; descuento: string | number; total: string | number; estado: SaleNoteStatus; observaciones: string | null; paciente: string; emitido_por_nombre: string; detalles: number; pagado: string | number; saldo: string | number };
+export type SaleNote = { id_nota_venta: number; id_adquisicion: number | null; id_paciente: number | null; numero_nota: string; fecha_emision: string; subtotal: string | number; descuento: string | number; total: string | number; estado: SaleNoteStatus; observaciones: string | null; paciente: string; emitido_por_nombre: string; detalles: number; pagado: string | number; saldo: string | number; productos_pendientes: number; entregas_registradas: number };
 export type SalePayment = { id_pago: number; id_nota_venta: number; monto: string | number; metodo_pago: PaymentMethod; fecha_pago: string; estado: PaymentStatus; observaciones: string | null; numero_nota: string; total_nota: string | number; paciente: string; registrado_por_nombre: string };
 export type SalesOptions = {
   patients: Array<{ id_paciente: number; nombre: string; ap_paterno: string; ap_materno: string | null; ci: string | null }>;
   acquisitions: Array<{ id_adquisicion: number; id_paciente: number; total: string | number; fecha_adquisicion: string; concepto: string }>;
-  items: Array<{ id: number; nombre: string; tipo: "SERVICIO" | "PRODUCTO" | "PAQUETE"; unidad_medida?: string; precio?: string | number }>;
+  items: Array<{ id: number; nombre: string; tipo: "SERVICIO" | "PRODUCTO" | "PAQUETE"; unidad_medida?: string; presentacion?: string; contenido_presentacion?: string | number; precio?: string | number }>;
   notes: Array<{ id_nota_venta: number; numero_nota: string; total: string | number; paciente: string; saldo: string | number }>;
 };
 export type AcquisitionStatus = "ACTIVA" | "COMPLETADA" | "CANCELADA";
 export type Acquisition = { id_adquisicion:number; id_paciente:number; id_paquete:number|null; id_promocion:number|null; fecha_adquisicion:string; precio_original:string|number; descuento:string|number; total:string|number; estado:AcquisitionStatus; paciente:string; ci:string|null; origen:string; sesiones_incluidas:number; sesiones_asignadas:number; sesiones_realizadas:number; detalles:Array<{id_detalle_adquisicion:number;id_servicio:number;servicio:string;sesiones_incluidas:number;precio_unitario:string|number;subtotal:string|number}> };
-export type AcquisitionOptions = { patients:Array<{id_paciente:number;nombre:string;ap_paterno:string;ap_materno:string|null;ci:string|null}>; offers:Array<{id:number;nombre:string;tipo:"PAQUETE"|"PROMOCION";precio?:string|number;tipo_descuento?:DiscountType;valor_descuento?:string|number;servicios:Array<{id_servicio:number;servicio:string;sesiones_incluidas:number;precio:string|number}>}> };
+export type AcquisitionOptions = { patients:Array<{id_paciente:number;nombre:string;ap_paterno:string;ap_materno:string|null;ci:string|null}>; offers:Array<{id:number;nombre:string;tipo:"SERVICIO"|"PAQUETE"|"PROMOCION";precio?:string|number;tipo_descuento?:DiscountType;valor_descuento?:string|number;servicios:Array<{id_servicio:number;servicio:string;sesiones_incluidas:number;precio:string|number}>}> };
 export type StockOperation = { id_consumo?:number;id_salida?:number;id_sesion?:number;id_detalle?:number;cantidad:string|number;registrado_en?:string;fecha_movimiento:string;observaciones:string|null;producto:string;unidad_medida:string;numero_lote:string|null;referencia:string };
 export type InventoryOperationOptions = { sessions:Array<{id_sesion:number;fecha_sesion:string;servicio:string;paciente:string}>; saleDetails:Array<{id_detalle:number;id_producto:number;producto:string;cantidad:string|number;numero_nota:string;cantidad_salida:string|number;pendiente:string|number}>; lots:InventoryOptions["lots"] };
 export type Company = { id_empresa:number;nombre_comercial:string;razon_social:string|null;nit:string|null;actividad_economica:string|null;telefono1:string|null;telefono2:string|null;correo:string|null;direccion:string|null;sitio_web:string|null;logo_url:string|null;moneda:string;eslogan_principal:string|null;titulo_login:string|null;subtitulo_panel:string|null;texto_superior_login:string|null;descripcion_corta:string|null;imagen_fondo_login_url:string|null;imagen_fondo_panel_login_url:string|null };

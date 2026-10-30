@@ -44,6 +44,9 @@ export function getValuations(query: {
   limit: number;
   search?: string;
   tipo?: ValuationType;
+  id_paciente?: number;
+  id_tratamiento?: number;
+  id_sesion?: number;
 }) {
   const params = new URLSearchParams({
     page: String(query.page),
@@ -51,6 +54,7 @@ export function getValuations(query: {
   });
   if (query.search) params.set("search", query.search);
   if (query.tipo) params.set("tipo", query.tipo);
+  for (const key of ["id_paciente", "id_tratamiento", "id_sesion"] as const) if (query[key]) params.set(key, String(query[key]));
   return request<PaginatedResponse<ClinicalValuation>>(
     `/clinica/valoraciones?${params}`,
   );

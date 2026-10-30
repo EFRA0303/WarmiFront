@@ -112,9 +112,9 @@ function sourceDetails(options: ValuationOptions, key: string) {
   const row = options.sessions.find((item) => item.id_sesion === sourceId);
   return row ? { ...row, id_sesion: row.id_sesion, patient: row.paciente, service: row.servicio } : null;
 }
-function CreateForm({ options, close }: { options: ValuationOptions; close: () => void }) {
+function CreateForm({ options, close, defaultSource }: { options: ValuationOptions; close: () => void; defaultSource?: string }) {
   const [state, action, pending] = useActionState(createValuation, initial);
-  const [sourceKey, setSourceKey] = useState("");
+  const [sourceKey, setSourceKey] = useState(defaultSource ?? "");
   const source = sourceDetails(options, sourceKey);
   return (
     <>
@@ -127,7 +127,7 @@ function CreateForm({ options, close }: { options: ValuationOptions; close: () =
         <div className="session-grid">
           <label className="session-wide">
             <span>Paciente y origen clínico *</span>
-            <select value={sourceKey} onChange={(event) => setSourceKey(event.target.value)} required>
+            <select value={sourceKey} onChange={(event) => setSourceKey(event.target.value)} disabled={Boolean(defaultSource)} required>
               <option value="">Seleccionar paciente u origen</option>
               <optgroup label="Valoración independiente">
                 {options.patients.map((item) => (
@@ -139,7 +139,7 @@ function CreateForm({ options, close }: { options: ValuationOptions; close: () =
               {options.requests.length > 0 && <optgroup label="Solicitudes de servicio">
                 {options.requests.map((item) => <option key={`request:${item.id_solicitud}`} value={`request:${item.id_solicitud}`}>{item.paciente} · {item.servicio}</option>)}
               </optgroup>}
-              {options.treatments.length > 0 && <optgroup label="Tratamientos">
+              {options.treatments.length > 0 && <optgroup label="Servicios del paciente">
                 {options.treatments.map((item) => <option key={`treatment:${item.id_tratamiento}`} value={`treatment:${item.id_tratamiento}`}>{item.paciente} · {item.servicio} · #{item.id_tratamiento}</option>)}
               </optgroup>}
               {options.sessions.length > 0 && <optgroup label="Sesiones clínicas">
@@ -194,12 +194,12 @@ function CreateForm({ options, close }: { options: ValuationOptions; close: () =
     </>
   );
 }
-export function NewValuationDialog({ options }: { options: ValuationOptions }) {
+export function NewValuationDialog({ options, defaultSource }: { options: ValuationOptions; defaultSource?: string }) {
   const [open, setOpen] = useState(false);
   return <>
     <button type="button" className="directory-primary" onClick={() => setOpen(true)}><PlusIcon />Nueva valoración</button>
     {open && <Dialog close={() => setOpen(false)} eyebrow="REGISTRO CLÍNICO" title="Nueva valoración" description="Vincula la evaluación al historial y a su origen clínico." wide>
-      <CreateForm options={options} close={() => setOpen(false)} />
+      <CreateForm options={options} close={() => setOpen(false)} defaultSource={defaultSource} />
     </Dialog>}
   </>;
 }

@@ -53,6 +53,7 @@ async function mutate(path: string, method: "POST" | "PATCH", body?: object) {
   revalidatePath("/dashboard/sesiones");
   revalidatePath("/dashboard/tratamientos");
   revalidatePath("/dashboard/agenda");
+  revalidatePath("/dashboard/historiales", "layout");
   return null;
 }
 

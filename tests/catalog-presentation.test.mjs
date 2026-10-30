@@ -21,6 +21,7 @@ function loadComponent(relativePath, mocks = {}) {
   runInNewContext(outputText, { module: compiledModule, exports: compiledModule.exports, require(name) {
     if (name.endsWith('.css')) return {};
     if (name in dependencies) return dependencies[name];
+    if (name === '@/components/service-configuration-fields') return loadComponent('../components/service-configuration-fields.tsx', mocks);
     throw new Error(`Dependencia sin simular: ${name}`);
   } }, { filename: filename.pathname });
   return compiledModule.exports;
@@ -170,7 +171,7 @@ test('Áreas y categorías conserva las pestañas y la guía sin permiso de crea
 test('Crear y editar servicio muestran el precio total sin cambiar el campo ni su valor', () => {
   for (const item of [undefined, { id_servicio: 1, id_categoria: 1, nombre: 'Servicio de prueba', precio: '450.50', estado: 'ACTIVO' }]) {
     const { ServiceCatalogManager: CatalogWithEditor } = loadComponent('../components/service-catalog-manager.tsx', {
-      react: { ...React, useState: value => [value === null ? { kind: 'service', item } : value, () => {}], useActionState: () => [{}, () => {}, false] },
+      react: { ...React, useState: value => [value === null ? { kind: 'service', item } : typeof value === 'function' ? value() : value, () => {}], useActionState: () => [{}, () => {}, false] },
       '@/components/icons': new Proxy({}, { get: () => () => null }),
       '@/components/submission-result-dialog': { SubmissionResultDialog: () => null },
       '@/app/dashboard/servicios/actions': { saveService: () => {} },
@@ -178,6 +179,10 @@ test('Crear y editar servicio muestran el precio total sin cambiar el campo ni s
     const html = renderToStaticMarkup(React.createElement(CatalogWithEditor, { data, initialTab: 'services', canCreate: true, canEdit: true }));
     assert.match(html, /<span>Precio total del servicio \(Bs\) \*<\/span>/);
     assert.doesNotMatch(html, /Precio por sesión/);
+    assert.match(html, /name="sesiones_incluidas"/);
+    assert.match(html, /Duración por sesión/);
+    assert.match(html, /Mediciones del paciente/);
+    assert.match(html, /Productos previstos por sesión/);
     const input = html.match(/<input\b[^>]*name="precio"[^>]*>/)?.[0];
     assert.ok(input);
     assert.match(input, /type="number"/);
@@ -185,4 +190,18 @@ test('Crear y editar servicio muestran el precio total sin cambiar el campo ni s
     assert.match(input, /step="0\.01"/);
     assert.ok(input.includes(`value="${item?.precio ?? 0}"`));
   }
+});
+
+test('La configuración muestra los momentos guardados y la cantidad prevista del insumo', () => {
+  const { ServiceMeasurementsFields, ServiceSuppliesFields } = loadComponent('../components/service-configuration-fields.tsx');
+  const measure = { id_tipo_medida: 7, nombre: 'Cintura', unidad: 'cm', estado: 'ACTIVO' };
+  const product = { id_producto: 3, nombre: 'Crema', unidad_medida: 'ML', estado: 'ACTIVO' };
+  const measurements = renderToStaticMarkup(React.createElement(ServiceMeasurementsFields, { measures: [measure], current: [{ id_tipo_medida: 7, obligatorio: true, momentos: ['CADA_SESION'], tipoMedida: measure }] }));
+  assert.match(measurements, /name="medidas"[^>]*checked=""[^>]*value="7"/);
+  assert.match(measurements, /name="momentos_7"[^>]*checked=""[^>]*value="CADA_SESION"/);
+  assert.match(measurements, /name="obligatoria_7"[^>]*checked=""/);
+  const supplies = renderToStaticMarkup(React.createElement(ServiceSuppliesFields, { supplies: [product], current: [{ id_producto: 3, cantidad_referencial: '2.50', producto: product }] }));
+  assert.match(supplies, /Cantidad por sesión \(ML\)/);
+  assert.match(supplies, /name="cantidad_3"[^>]*value="2.50"/);
+  assert.match(supplies, /no descuenta inventario/);
 });

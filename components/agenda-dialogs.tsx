@@ -10,6 +10,9 @@ import {
   type ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { careHref } from "@/lib/patient-care";
+import "./patient-care.css";
 import {
   CalendarIcon,
   CheckIcon,
@@ -267,7 +270,7 @@ function AppointmentFields({
         <FieldError state={state} name="id_personal" />
       </label>
       <label>
-        <span>Tratamiento</span>
+        <span>Servicio del paciente</span>
         <select
           name="id_tratamiento"
           value={treatmentId}
@@ -432,7 +435,24 @@ function ReprogramForm({ appointment, options, onClose }: { appointment: Appoint
   );
 }
 
-export function AppointmentActions({ appointment, options }: { appointment: AppointmentListItem; options: AgendaOptions }) {
+export function AppointmentDetailDialog({ appointment, options, canEdit, canAttend, onClose }: { appointment: AppointmentListItem; options: AgendaOptions; canEdit: boolean; canAttend: boolean; onClose: () => void }) {
+  const statusLabels: Record<AppointmentStatus, string> = { PROGRAMADA: "Programada", EN_ESPERA: "En espera", ATENDIDA: "Atendida", CANCELADA: "Cancelada", NO_ASISTIO: "No asistió" };
+  return <DialogFrame open onClose={onClose} eyebrow="DETALLE DE CITA" title={fullName(appointment.paciente.persona)} description={appointment.tratamiento?.servicio.nombre ?? "Cita general"}>
+    <div className="agenda-appointment-detail">
+      <dl>
+        <div><dt>Estado</dt><dd>{statusLabels[appointment.estado]}</dd></div>
+        <div><dt>Profesional</dt><dd>{fullName(appointment.personal.usuario.persona)}</dd></div>
+        <div><dt>Inicio</dt><dd>{localDateTime(appointment.fecha_hora_inicio).replace("T", " · ")}</dd></div>
+        <div><dt>Final</dt><dd>{localDateTime(appointment.fecha_hora_fin).replace("T", " · ")}</dd></div>
+        {appointment.numero_sesion && <div><dt>Sesión</dt><dd>{appointment.numero_sesion}</dd></div>}
+      </dl>
+      {appointment.observaciones && <p>{appointment.observaciones}</p>}
+      <AppointmentActions appointment={appointment} options={options} canEdit={canEdit} canAttend={canAttend} />
+    </div>
+  </DialogFrame>;
+}
+
+export function AppointmentActions({ appointment, options, canEdit = true, canAttend = false }: { appointment: AppointmentListItem; options: AgendaOptions; canEdit?: boolean; canAttend?: boolean }) {
   const [editOpen, setEditOpen] = useState(false);
   const [reprogramOpen, setReprogramOpen] = useState(false);
   const [result, setResult] = useState<RegistrationState>({});
@@ -447,19 +467,20 @@ export function AppointmentActions({ appointment, options }: { appointment: Appo
   return (
     <>
       <div className="agenda-card__actions">
-        {!final && <button type="button" onClick={() => setEditOpen(true)} title="Editar cita"><EditIcon /></button>}
-        {appointment.estado === "PROGRAMADA" && <button type="button" onClick={() => setReprogramOpen(true)} title="Reprogramar cita"><HistoryIcon /></button>}
-        {appointment.estado === "PROGRAMADA" && <button type="button" className="agenda-action-text" disabled={pending} onClick={() => change("EN_ESPERA")}><CheckIcon />Llegó</button>}
-        {appointment.estado === "EN_ESPERA" && <button type="button" className="agenda-action-text" disabled={pending} onClick={() => change("ATENDIDA")}><CheckIcon />Atendida</button>}
-        {!final && <button type="button" className="agenda-action-text" disabled={pending} onClick={() => change("NO_ASISTIO")}><CloseIcon />No asistió</button>}
-        {!final && <button type="button" className="agenda-action-danger" disabled={pending} onClick={() => change("CANCELADA")}><CloseIcon />Cancelar</button>}
+        {canEdit && !final && <button type="button" onClick={() => setEditOpen(true)} title="Editar cita"><EditIcon /></button>}
+        {canEdit && appointment.estado === "PROGRAMADA" && <button type="button" onClick={() => setReprogramOpen(true)} title="Reprogramar cita"><HistoryIcon /></button>}
+        {canEdit && appointment.estado === "PROGRAMADA" && <button type="button" className="agenda-action-text" disabled={pending} onClick={() => change("EN_ESPERA")}><CheckIcon />Llegó</button>}
+        {canAttend && appointment.estado === "EN_ESPERA" && appointment.id_tratamiento && <Link className="patient-care-appointment-link" href={careHref("/dashboard/sesiones", { id_paciente: appointment.id_paciente, id_tratamiento: appointment.id_tratamiento }, { atender: appointment.id_cita })}><CheckIcon />Atender</Link>}
+        {canEdit && appointment.estado === "EN_ESPERA" && !appointment.id_tratamiento && <button type="button" className="agenda-action-text" disabled={pending} onClick={() => change("ATENDIDA")}><CheckIcon />Atendida</button>}
+        {canEdit && !final && <button type="button" className="agenda-action-text" disabled={pending} onClick={() => change("NO_ASISTIO")}><CloseIcon />No asistió</button>}
+        {canEdit && !final && <button type="button" className="agenda-action-danger" disabled={pending} onClick={() => change("CANCELADA")}><CloseIcon />Cancelar</button>}
       </div>
-      <DialogFrame open={editOpen} onClose={() => setEditOpen(false)} eyebrow="EDITAR CITA" title="Actualizar cita" description="Modifica únicamente los datos necesarios.">
+      {canEdit && <DialogFrame open={editOpen} onClose={() => setEditOpen(false)} eyebrow="EDITAR CITA" title="Actualizar cita" description="Modifica únicamente los datos necesarios.">
         <AppointmentForm options={options} appointment={appointment} onClose={() => setEditOpen(false)} />
-      </DialogFrame>
-      <DialogFrame open={reprogramOpen} onClose={() => setReprogramOpen(false)} eyebrow="CAMBIO DE HORARIO" title="Reprogramar cita" description="El horario anterior quedará registrado en el historial.">
+      </DialogFrame>}
+      {canEdit && <DialogFrame open={reprogramOpen} onClose={() => setReprogramOpen(false)} eyebrow="CAMBIO DE HORARIO" title="Reprogramar cita" description="El horario anterior quedará registrado en el historial.">
         <ReprogramForm appointment={appointment} options={options} onClose={() => setReprogramOpen(false)} />
-      </DialogFrame>
+      </DialogFrame>}
       <SubmissionResultDialog state={result} onSuccess={() => setResult({})} />
     </>
   );

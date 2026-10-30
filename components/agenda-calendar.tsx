@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition, type CSSProperties } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from "@/components/icons";
-import { AppointmentActions, NewAppointmentDialog } from "@/components/agenda-dialogs";
+import { AppointmentActions, AppointmentDetailDialog, NewAppointmentDialog } from "@/components/agenda-dialogs";
 import type {
   AgendaOptions,
   AppointmentListItem,
@@ -296,6 +296,7 @@ function DailySpecialistBoard({
   staffPermissions,
   businessHours,
   date,
+  onSelect,
 }: {
   appointments: AppointmentListItem[];
   staff: AgendaOptions["staff"];
@@ -304,6 +305,7 @@ function DailySpecialistBoard({
   staffPermissions: AgendaOptions["staffPermissions"];
   businessHours: AgendaOptions["businessHours"];
   date: string;
+  onSelect: (appointment: AppointmentListItem) => void;
 }) {
   if (!staff.length) {
     return <div className="agenda-day-board-empty">No hay especialistas disponibles para mostrar.</div>;
@@ -413,7 +415,8 @@ function DailySpecialistBoard({
                 ((visibleEnd - visibleStart) / slotMinutes) * slotHeight - 4,
               );
               return (
-                <article
+                <button
+                  type="button"
                   className={`agenda-timeline-card agenda-timeline-card--${appointment.estado.toLowerCase()}`}
                   key={appointment.id_cita}
                   style={{
@@ -422,11 +425,13 @@ function DailySpecialistBoard({
                     height,
                   } as CSSProperties}
                   title={`${personName(appointment.paciente.persona)} · ${appointmentTime(appointment.fecha_hora_inicio)}–${appointmentTime(appointment.fecha_hora_fin)}`}
+                  aria-label={`Abrir cita de ${personName(appointment.paciente.persona)} a las ${appointmentTime(appointment.fecha_hora_inicio)}`}
+                  onClick={() => onSelect(appointment)}
                 >
                   <time>{appointmentTime(appointment.fecha_hora_inicio)}–{appointmentTime(appointment.fecha_hora_fin)}</time>
                   <strong>{personName(appointment.paciente.persona)}</strong>
                   <span>{appointment.tratamiento?.servicio.nombre ?? "Cita general"}</span>
-                </article>
+                </button>
               );
             })}
         </div>
@@ -439,10 +444,12 @@ function DailySpecialistBoard({
 function AppointmentCard({
   appointment,
   canEdit,
+  canAttend,
   options,
 }: {
   appointment: AppointmentListItem;
   canEdit: boolean;
+  canAttend: boolean;
   options: AgendaOptions;
 }) {
   return (
@@ -463,7 +470,7 @@ function AppointmentCard({
         <span className="agenda-card__professional">
           <i />{personName(appointment.personal.usuario.persona)}
         </span>
-        {canEdit && <AppointmentActions appointment={appointment} options={options} />}
+        {(canEdit || canAttend) && <AppointmentActions appointment={appointment} options={options} canEdit={canEdit} canAttend={canAttend} />}
       </footer>
     </article>
   );
@@ -479,6 +486,7 @@ export function AgendaCalendar({
   defaultTreatmentId,
   canCreate,
   canEdit,
+  canAttend = false,
 }: {
   appointments: AppointmentListItem[];
   options: AgendaOptions;
@@ -489,10 +497,13 @@ export function AgendaCalendar({
   defaultTreatmentId?: number;
   canCreate: boolean;
   canEdit: boolean;
+  canAttend?: boolean;
 }) {
   const router = useRouter();
   const [mode, setMode] = useState<ViewMode>(initialMode);
   const [selectedDate, setSelectedDate] = useState(initialDate);
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState<number | null>(null);
+  const selectedAppointment = appointments.find(item => item.id_cita === selectedAppointmentId);
   const [pending, startTransition] = useTransition();
   const grouped = useMemo(() => {
     const result = new Map<string, AppointmentListItem[]>();
@@ -626,6 +637,7 @@ export function AgendaCalendar({
               staffPermissions={options.staffPermissions ?? []}
               businessHours={options.businessHours}
               date={selectedDate}
+              onSelect={appointment => setSelectedAppointmentId(appointment.id_cita)}
             />
           ) : (
             <div className={`agenda-focused-grid agenda-focused-grid--${mode}`}>
@@ -633,7 +645,7 @@ export function AgendaCalendar({
                 <section key={date} className={date === selectedDate ? "selected" : ""}>
                   <button type="button" className="agenda-focused-day" onClick={() => setSelectedDate(date)}>{shortDay(date)}</button>
                   <ExceptionNotice date={date} businessHours={options.businessHours} compact />
-                  <div>{(grouped.get(date) ?? []).map((appointment) => <AppointmentCard key={appointment.id_cita} appointment={appointment} options={options} canEdit={canEdit} />)}</div>
+                  <div>{(grouped.get(date) ?? []).map((appointment) => <AppointmentCard key={appointment.id_cita} appointment={appointment} options={options} canEdit={canEdit} canAttend={canAttend} />)}</div>
                   {!(grouped.get(date) ?? []).length && <span className="agenda-focused-empty">Sin citas</span>}
                 </section>
               ))}
@@ -652,13 +664,14 @@ export function AgendaCalendar({
           <ExceptionNotice date={selectedDate} businessHours={options.businessHours} compact />
           <div className="agenda-day-panel__body">
             {selectedAppointments.length ? selectedAppointments.map((appointment) => (
-              <AppointmentCard key={appointment.id_cita} appointment={appointment} options={options} canEdit={canEdit} />
+              <AppointmentCard key={appointment.id_cita} appointment={appointment} options={options} canEdit={canEdit} canAttend={canAttend} />
             )) : (
               <div className="agenda-free-day"><CalendarIcon /><h3>Día libre</h3><p>No hay citas programadas.</p></div>
             )}
           </div>
         </aside>
       </div>
+      {selectedAppointment && <AppointmentDetailDialog appointment={selectedAppointment} options={options} canEdit={canEdit} canAttend={canAttend} onClose={() => setSelectedAppointmentId(null)} />}
     </>
   );
 }

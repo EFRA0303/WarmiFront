@@ -282,6 +282,14 @@
   color: var(--foreground);
 }
 .agenda-timeline-card time { font-size: .53rem; font-weight: 800; }
+.agenda-timeline-card[type="button"] { cursor: pointer; text-align: left; font: inherit; }
+.agenda-timeline-card[type="button"]:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.agenda-appointment-detail { min-width: 0; padding-top: 16px; }
+.agenda-appointment-detail dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: 14px; margin: 0 0 18px; }
+.agenda-appointment-detail dl > div { min-width: 0; }
+.agenda-appointment-detail dt { color: var(--muted); font-size: .7rem; }
+.agenda-appointment-detail dd { margin: 5px 0 0; font-size: .8rem; overflow-wrap: anywhere; }
+.agenda-appointment-detail > p { color: var(--muted); font-size: .75rem; line-height: 1.6; overflow-wrap: anywhere; }
 .agenda-timeline-card strong { margin-top: 3px; overflow: hidden; font-size: .64rem; text-overflow: ellipsis; white-space: nowrap; }
 .agenda-timeline-card span { margin-top: 2px; overflow: hidden; color: var(--muted); font-size: .54rem; text-overflow: ellipsis; white-space: nowrap; }
 .agenda-timeline-card--cancelada,
